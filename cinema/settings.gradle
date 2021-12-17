@@ -9,5 +9,4 @@ rootProject.name = "cinema"
 include ':film'
 include ':i-film'
 include ':udp'
-include ':i-mq'
-include ':mq'
+include ':push'

@@ -17,18 +17,6 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
-
-        ndk {
-            //选择要添加的对应 cpu 类型的 .so 库。
-            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a'
-            // 还可以添加 'x86', 'x86_64', 'mips', 'mips64'
-        }
-
-        manifestPlaceholders = [
-                JPUSH_PKGNAME : applicationId,
-                JPUSH_APPKEY : "d2028651a45df34e973f7f0b", //JPush 上注册的包名对应的 Appkey.
-                JPUSH_CHANNEL : "developer-default", //暂时填写默认值即可.
-        ]
     }
 
     buildTypes {
@@ -72,11 +60,16 @@ dependencies {
     api project(':p-liulisho-download')
 
     api project(':udp')
+    api project(':push')
 
     api project(':film')
-    api project(':mq')
 
     implementation thirdDependencies.andServer
+
+    //友盟
+    api thirdDependencies.um1
+    api thirdDependencies.um2
+    api thirdDependencies.um3
 
     annotationProcessor thirdDependencies.andServerAnna
 

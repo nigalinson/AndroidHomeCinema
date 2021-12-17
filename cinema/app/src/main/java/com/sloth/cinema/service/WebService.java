@@ -1,29 +1,26 @@
 package com.sloth.cinema.service;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
-
 import androidx.annotation.Nullable;
-
-import com.sankuai.waimai.router.Router;
 import com.sloth.arp.ARP;
 import com.sloth.cinema.IWebServiceCallbackInterface;
 import com.sloth.cinema.IWebServiceInterface;
 import com.sloth.cinema.R;
-import com.sloth.imq.IMQ;
-import com.sloth.imq.MqCode;
-import com.sloth.imq.MqMsg;
+import com.sloth.cinema.push.PushConstants;
+import com.sloth.push.PushData;
 import com.sloth.tools.util.GsonUtils;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.NetworkUtils;
 import com.sloth.tools.util.NotificationUtils;
 import com.yanzhenjie.andserver.AndServer;
 import com.yanzhenjie.andserver.Server;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 2021/12/16         Carl            1.0                    1.0
  * Why & What is modified:
  */
-public class WebService extends Service implements IMQ.Listener {
+public class WebService extends Service {
 
     private static final String TAG = "WebService";
 
@@ -49,7 +46,6 @@ public class WebService extends Service implements IMQ.Listener {
     private Server server;
 
     private ARP arp;
-    private IMQ mq;
 
     private final List<IWebServiceCallbackInterface> callbackInterfaceList = new ArrayList<>();
 
@@ -74,6 +70,7 @@ public class WebService extends Service implements IMQ.Listener {
             LogUtils.d(TAG, "web service is running !");
             openServer();
         }
+
     }
 
     @Nullable
@@ -93,16 +90,7 @@ public class WebService extends Service implements IMQ.Listener {
     public void onDestroy() {
         super.onDestroy();
         LogUtils.d(TAG, "web service is destroyed !");
-//        releaseLock();
         stopServer();
-    }
-
-    @Override
-    public void onMqReceived(MqMsg msg) {
-        LogUtils.d(TAG, "MQ received: " + GsonUtils.toJson(msg));
-        if(msg.getMqCode() == MqCode.ADD){
-
-        }
     }
 
     private void openServer() {
@@ -121,22 +109,15 @@ public class WebService extends Service implements IMQ.Listener {
         String msg = "server is running at : " + NetworkUtils.getIpAddressByWifi() + ", on port : " + port;
         LogUtils.d(TAG, msg);
         notifyCallbacks(msg);
-//        acquireLock();
 
         arp = new ARP();
         arp.startARP();
 
-        mq = Router.getService(IMQ.class);
-        mq.init();
-        mq.addListener(this);
+        registerPush();
     }
 
     private void stopServer(){
-        if(mq != null){
-            mq.removeListener(this);
-            mq.stop();
-            mq = null;
-        }
+        unregisterPush();
 
         if(arp != null){
             arp.stopARP();
@@ -154,17 +135,14 @@ public class WebService extends Service implements IMQ.Listener {
         notifyCallbacks(shutDownMsg);
     }
 
-    private void acquireLock(){
-        PowerManager mgr = (PowerManager)getSystemService(Context.POWER_SERVICE);
-        wakeLock = mgr.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WebService:MyWakeLock");
-        wakeLock.acquire();
+    private void registerPush() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(PushConstants.BROADCAST_ACTION);
+        registerReceiver(pushReceiver, intentFilter);
     }
 
-    private void releaseLock(){
-        if(wakeLock != null){
-            wakeLock.release();
-            wakeLock = null;
-        }
+    private void unregisterPush() {
+        unregisterReceiver(pushReceiver);
     }
 
     public void setNotification() {
@@ -183,4 +161,13 @@ public class WebService extends Service implements IMQ.Listener {
             }
         }
     }
+
+    private final BroadcastReceiver pushReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            PushData pushData = intent.getParcelableExtra("data");
+            LogUtils.d(TAG, "received push: " + GsonUtils.toJson(pushData));
+        }
+    };
+
 }

@@ -118,6 +118,9 @@ ext {
             wmRouterAnno               : 'io.github.meituan-dianping:compiler:1.2.1',
             wmRouter                   : 'io.github.meituan-dianping:router:1.2.1',
             andServer                  : 'com.yanzhenjie.andserver:api:2.1.9',
-            andServerAnna              : 'com.yanzhenjie.andserver:processor:2.1.9'
+            andServerAnna              : 'com.yanzhenjie.andserver:processor:2.1.9',
+            um1                        : 'com.umeng.umsdk:common:9.4.4',
+            um2                        : 'com.umeng.umsdk:asms:1.4.1',
+            um3                        : 'com.umeng.umsdk:push:6.4.7'
     ]
 }

@@ -10,4 +10,5 @@ interface IWebServiceInterface {
     void removeCallback(IWebServiceCallbackInterface callback);
 
     void start();
+
 }

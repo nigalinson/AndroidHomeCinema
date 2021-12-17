@@ -41,9 +41,11 @@
 
 
 --------------------------
-JPush
+Push
 app key
-d2028651a45df34e973f7f0b
+61bc5bed775e2a5a76e59c71
+msg secret
+29456a4c9347b1726248833c8c0aa4b2
 master secret
-63100c63c977a6c028b27681
+kk8g6dirynranbj4auxqpbq9kgzqchny
 --------------------------

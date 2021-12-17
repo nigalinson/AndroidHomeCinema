@@ -12,9 +12,12 @@ import com.sankuai.waimai.router.common.DefaultRootUriHandler;
 import com.sankuai.waimai.router.components.DefaultLogger;
 import com.sankuai.waimai.router.components.DefaultOnCompleteListener;
 import com.sankuai.waimai.router.core.Debugger;
+import com.sloth.cinema.push.PushHelper;
 import com.sloth.pinsplatform.log.Log;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.Utils;
+import com.umeng.commonsdk.UMConfigure;
+import com.umeng.commonsdk.utils.UMUtils;
 
 /**
  * Author:    Carl
@@ -43,10 +46,13 @@ public class App extends MultiDexApplication {
     public void onCreate() {
         sApplication = this;
         super.onCreate();
+        Utils.init(this);
         initRouter(this);
 
-        Utils.init(this);
         LogUtils.init(Router.getService(Log.class, Configs.LOG_ENGINE));
+
+        initPush();
+
     }
 
     private void initRouter(Context context) {
@@ -75,6 +81,22 @@ public class App extends MultiDexApplication {
         rootHandler.setGlobalOnCompleteListener(DefaultOnCompleteListener.INSTANCE);
         // 初始化
         Router.init(rootHandler);
-
     }
+
+    private void initPush() {
+        //日志开关
+        UMConfigure.setLogEnabled(true);
+        //预初始化
+        PushHelper.preInit(Utils.getApp());
+        //是否同意隐私政策
+        boolean isMainProcess = UMUtils.isMainProgress(Utils.getApp());
+        if (isMainProcess) {
+            //启动优化：建议在子线程中执行初始化
+            new Thread(() -> PushHelper.init(Utils.getApp())).start();
+        } else {
+            //若不是主进程（":channel"结尾的进程），直接初始化sdk，不可在子线程中执行
+            PushHelper.init(Utils.getApp());
+        }
+    }
+
 }
