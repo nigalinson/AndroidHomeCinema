@@ -1,0 +1,85 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdkVersion Integer.parseInt(COMPILE_SDK_VERSION)
+    buildToolsVersion BUILD_TOOLS_VERSION
+
+    defaultConfig {
+        minSdkVersion Integer.parseInt(MIN_SDK_VERSION)
+        targetSdkVersion Integer.parseInt(TARGET_SDK_VERSION)
+        versionCode Integer.parseInt(PLATFORM_VERSION.replace('.',''))
+        versionName PLATFORM_VERSION
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main {
+            def dirs = ['main','tools','functions']
+            dirs.each { dir ->
+                java.srcDir("src/$dir/java")
+                res.srcDir("src/$dir/res")
+            }
+        }
+    }
+}
+
+dependencies {
+
+    testImplementation testDependencies.junit
+    testImplementation testDependencies.mockito
+    testImplementation testDependencies.robolectric
+    androidTestImplementation testDependencies.runner
+    androidTestImplementation testDependencies.espresso
+    androidTestImplementation testDependencies.mockitoCore
+
+    annotationProcessor thirdDependencies.wmRouterAnno
+
+    api supportDependencies.appCompat
+    api supportDependencies.design
+    api supportDependencies.constraintlayout
+
+    api thirdDependencies.wmRouter
+    api thirdDependencies.multidex
+    api thirdDependencies.rxJava2
+    api thirdDependencies.rxAndroid2
+    api thirdDependencies.greendao
+    api thirdDependencies.eventBus
+    api thirdDependencies.butterKnife
+    api thirdDependencies.nineoldandroids
+    implementation thirdDependencies.gson
+    implementation thirdDependencies.logger
+    implementation thirdDependencies.glide
+    implementation thirdDependencies.picasso
+    implementation supportDependencies.lifecycle
+    implementation thirdDependencies.retrofit
+    implementation thirdDependencies.converterGson
+    implementation thirdDependencies.adapterRxjava2
+    implementation thirdDependencies.okhttp
+    implementation thirdDependencies.okhttplog
+    implementation thirdDependencies.lottie
+    implementation thirdDependencies.SVGAPlayer
+    implementation thirdDependencies.protobufJava
+    implementation thirdDependencies.converterProtobuf
+    implementation thirdDependencies.protobufJsonFormat
+    implementation thirdDependencies.stream
+}
+repositories {
+    mavenCentral()
+}
+
+apply from: 'push_maven.gradle'

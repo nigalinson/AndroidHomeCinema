@@ -1,0 +1,87 @@
+plugins {
+    id 'com.android.application'
+    id 'WMRouter'
+    id 'com.yanzhenjie.andserver'
+}
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "com.sloth.cinema"
+        minSdkVersion 19
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+
+        ndk {
+            //选择要添加的对应 cpu 类型的 .so 库。
+            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a'
+            // 还可以添加 'x86', 'x86_64', 'mips', 'mips64'
+        }
+
+        manifestPlaceholders = [
+                JPUSH_PKGNAME : applicationId,
+                JPUSH_APPKEY : "d2028651a45df34e973f7f0b", //JPush 上注册的包名对应的 Appkey.
+                JPUSH_CHANNEL : "developer-default", //暂时填写默认值即可.
+        ]
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main {
+            def dirs = ['main']
+            dirs.each { dir ->
+                java.srcDir("src/$dir/java")
+                res.srcDir("src/$dir/res")
+            }
+        }
+    }
+}
+
+dependencies {
+
+    testImplementation testDependencies.junit
+    testImplementation testDependencies.mockito
+    androidTestImplementation testDependencies.runner
+    androidTestImplementation testDependencies.espresso
+    androidTestImplementation testDependencies.mockitoCore
+
+    implementation supportDependencies.appCompat
+    implementation supportDependencies.constraintlayout
+
+    api project(':platform')
+    api project(':p-ffmpeg-mediainfo-retriever')
+    api project(':p-barcode')
+    api project(':p-player')
+    api project(':p-banner')
+    api project(':p-liulisho-download')
+
+    api project(':udp')
+
+    api project(':film')
+    api project(':mq')
+
+    implementation thirdDependencies.andServer
+
+    annotationProcessor thirdDependencies.andServerAnna
+
+    annotationProcessor thirdDependencies.wmRouterAnno
+}
+repositories {
+    mavenCentral()
+}

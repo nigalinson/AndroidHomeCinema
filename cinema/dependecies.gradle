@@ -1,0 +1,123 @@
+ext {
+    testDependencies = [
+            junit                     : "junit:junit:4.+",
+            runner                    : 'androidx.test.ext:junit:1.1.1',
+            espresso                  : 'androidx.test.espresso:espresso-core:3.1.0',
+            mockito                   : 'org.mockito:mockito-core:1.+',
+            mockitoCore               : 'org.mockito:mockito-core:1.+',
+            robolectric               : 'org.robolectric:robolectric:3.3.2'
+    ]
+
+    supportDependencies = [
+            design                    : 'com.google.android.material:material:1.2.0-alpha06',
+            recyclerView              : 'androidx.recyclerview:recyclerview:1.0.0',
+            cardView                  : 'androidx.cardview:cardview:1.0.0',
+            appCompat                 : 'androidx.appcompat:appcompat:1.0.2',
+            palette                   : "androidx.palette:palette:1.0.0",
+            gridlayout                : "androidx.gridlayout:gridlayout:1.0.0",
+            constraintlayout          : 'androidx.constraintlayout:constraintlayout:1.1.3',
+            coordinatorlayout         : 'androidx.coordinatorlayout:coordinatorlayout:1.1.0',
+            multidex                  : 'androidx.multidex:multidex:2.0.0',
+            annotation                : 'androidx.annotation:annotation:1.2.0-alpha01',
+            legacy                    : 'androidx.legacy:legacy-support-v4:1.0.0',
+            lifecycle                 : 'androidx.lifecycle:lifecycle-runtime:2.2.0',
+            lifecycleCompile          : 'androidx.lifecycle:lifecycle-compiler:2.2.0',
+            lifecycleProcess          : 'androidx.lifecycle:lifecycle-process:2.2.0',
+    ]
+
+    slothDependencies = [
+            shadowCore                 : 'com.tencent.shadow.core:common',
+            shadowDynamicHost          : 'com.tencent.shadow.dynamic:dynamic-host'
+    ]
+
+
+    thirdDependencies = [
+            multidex                   : "androidx.multidex:multidex:2.0.1",
+            //View注解   代码地址-----> https://github.com/JakeWharton/butterknife
+            butterKnife                : "com.jakewharton:butterknife:10.2.3",
+            butterKnifeApt             : "com.jakewharton:butterknife-compiler:10.2.3",
+            //API网络请求注解库    代码地址-----> https://github.com/square/retrofit
+            retrofit                   : "com.squareup.retrofit2:retrofit:2.3.0",
+            converterGson              : "com.squareup.retrofit2:converter-gson:2.3.0",
+            converterProtobuf          : 'com.squareup.retrofit2:converter-protobuf:2.3.0',
+            adapterRxjava2             : "com.squareup.retrofit2:adapter-rxjava2:2.3.0",
+            //异步处理库    代码地址-----> https://github.com/ReactiveX/RxAndroid
+            rxJava2                    : "io.reactivex.rxjava2:rxandroid:2.1.0",
+            rxAndroid2                 : "io.reactivex.rxjava2:rxjava:2.1.0",
+            //网络请求库 代码地址-----> https://github.com/square/okhttp
+            okhttp                     : "com.squareup.okhttp3:okhttp:3.8.0",
+            okhttpUrl                  : "com.squareup.okhttp3:okhttp-urlconnection:3.8.0",
+            okhttplog                  : "com.squareup.okhttp3:logging-interceptor:3.8.0",
+            //EventBus 代码地址-----> https://github.com/greenrobot/EventBus
+            eventBus                   : "org.greenrobot:eventbus:3.0.0",
+            //Logger输出显示 代码地址-----> https://github.com/orhanobut/logger
+            logger                     : 'com.orhanobut:logger:1.15',
+            //图片加载库 代码地址-----> https://github.com/square/picasso
+            picasso                    : 'com.squareup.picasso:picasso:2.5.2',
+            //加强版RecyclerView 代码地址-----> https://github.com/Malinskiy/SuperRecyclerView
+            recyclerView               : 'com.malinskiy:superrecyclerview:1.1.4',
+            //图片裁剪uCrop 代码地址-----> https://github.com/Yalantis/uCrop
+            ucrop                      : 'com.github.yalantis:ucrop:2.2.1',
+            //字符串格式化处理代码库 代码地址-----> https://github.com/square/phrase
+            phrase                     : 'com.squareup.phrase:phrase:1.1.0',
+            //数据库帮助库 代码地址-------->https://github.com/jgilfelt/android-sqlite-asset-helper
+            sqliteassethelper          : 'com.readystatesoftware.sqliteasset:sqliteassethelper:2.0.1',
+            //GIF动画支持库 代码地址-------->https://github.com/koral--/android-gif-drawable
+            gifDrawable                : 'pl.droidsonroids.gif:android-gif-drawable:1.2.12',
+            //ZXing Bar Code 代码地址-----> https://github.com/zxing/zxing
+            zxing                      : 'com.google.zxing:core:3.3.0',
+            zxingCode                  : 'com.google.zxing:android-core:3.3.0',
+            umeng                      : 'com.umeng.analytics:analytics:6.0.1',
+            //Robust 美团热更新库 代码地址-----> https://github.com/Meituan-Dianping/Robust
+            robust                     : 'com.meituan.robust:robust:0.3.8',
+            //gravitysnaphelper  代码地址----->https://github.com/rubensousa/RecyclerViewSnap
+            gravitysnaphelper          : 'com.github.rubensousa:gravitysnaphelper:1.1',
+            //nineoldandroids  代码地址------->https://github.com/JakeWharton/NineOldAndroids
+            nineoldandroids            : 'com.nineoldandroids:library:2.4.0',
+            //androidImageSlider  自动循环播放的Viewpage(自带多个页面切换效果) https://github.com/daimajia/AndroidImageSlider
+            androidImageSlider         : 'com.daimajia.slider:library:1.1.5@aar',
+            //AndPermission 代码地址------->https://github.com/yanzhenjie/AndPermission
+            andPermission              : 'com.yanzhenjie:permission:1.0.8',
+            //AndPermission 代码地址------->https://github.com/yanzhenjie/AndPermission
+//            andPermission     : 'com.yanzhenjie:permission:1.0.8',
+            //greendao 代码地址------->https://github.com/greenrobot/greenDAO  ,http://www.cnblogs.com/wjtaigwh/p/6394288.html
+            greendao                   : 'org.greenrobot:greendao:3.3.0',
+            //解决lombok 报annotation不存在错误
+            javaxannotation            : 'org.glassfish:javax.annotation:10.0-b28',
+            //json数据解析库  代码地址------->https://github.com/google/gson
+            gson                       : 'com.google.code.gson:gson:2.8.5',
+            fastjson                   : 'com.alibaba:fastjson:1.2.73',
+            //数据库查看工具   代码地址------->https://github.com/facebook/stetho
+            stetho                     : 'com.facebook.stetho:stetho:1.5.0',
+            //腾讯版本更新异常上报及热更新sdk 文档地址 ---> https://bugly.qq.com/docs/user-guide/instruction-manual-android-hotfix/?v=20170815114059
+            bugly                      : 'com.tencent.bugly:crashreport:3.1.0',
+            //腾讯XLog日志记录库 文档地址 ---> https://github.com/Tencent/mars
+            xlog                       : 'com.tencent.mars:mars-xlog:1.2.5',
+            //友盟基础库
+            umengCommon                : 'com.umeng.sdk:common:latest.integration',
+            //友盟
+            protobufJava               : 'com.google.protobuf:protobuf-java:3.1.0',
+            protobuf                   : 'com.google.protobuf:protoc:3.1.0',
+            protobufJsonFormat         : 'com.googlecode.protobuf-java-format:protobuf-java-format:1.4',
+            //https://github.com/lingochamp/FileDownloader/blob/master/README-zh.md
+            fileDownload               : 'com.liulishuo.filedownloader:library:1.7.5',
+            exoplayer                  : 'com.google.android.exoplayer:exoplayer:2.14.1',
+            glide                      : 'com.github.bumptech.glide:glide:4.11.0',
+            glideCompiler              : 'com.github.bumptech.glide:compiler:4.11.0',
+            //https://github.com/airbnb/lottie-android
+            lottie                     : 'com.airbnb.android:lottie:3.4.4',
+            //https://github.com/yyued/SVGAPlayer-Android/blob/master/readme.zh.md
+            SVGAPlayer                 : 'com.github.yyued:SVGAPlayer-Android:2.5.12',
+            ijkplayerjava              : 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8',
+            x5webview                  : 'com.tencent.tbs.tbssdk:sdk:43967',
+            ffmpegRetriever            : 'com.github.wseemann:FFmpegMediaMetadataRetriever-core:1.0.15',
+            ffmpegRtNative             : 'com.github.wseemann:FFmpegMediaMetadataRetriever-native:1.0.15',
+            // 低版本stream支持  ---> https://mvnrepository.com/artifact/com.annimon/stream
+            stream                     : 'com.annimon:stream:1.2.1',
+            aspectj                    : 'org.aspectj:aspectjrt:1.9.6',
+            wmRouterAnno               : 'io.github.meituan-dianping:compiler:1.2.1',
+            wmRouter                   : 'io.github.meituan-dianping:router:1.2.1',
+            andServer                  : 'com.yanzhenjie.andserver:api:2.1.9',
+            andServerAnna              : 'com.yanzhenjie.andserver:processor:2.1.9'
+    ]
+}

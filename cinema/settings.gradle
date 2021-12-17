@@ -1,0 +1,13 @@
+include ':p-liulisho-download'
+include ':p-banner'
+include ':p-player'
+include ':p-barcode'
+include ':p-ffmpeg-mediainfo-retriever'
+include ':platform'
+include ':app'
+rootProject.name = "cinema"
+include ':film'
+include ':i-film'
+include ':udp'
+include ':i-mq'
+include ':mq'
