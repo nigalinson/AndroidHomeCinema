@@ -5,7 +5,6 @@ import com.sankuai.waimai.router.annotation.RouterService;
 import com.sloth.pinsplatform.Strategies;
 import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
-import com.sloth.tools.util.ExecutorUtils;
 import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.GsonUtils;
 import com.sloth.tools.util.LogUtils;
@@ -14,10 +13,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Author:    ZhuWenWu
@@ -31,82 +27,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Why & What is modified:
  */
 @RouterService(interfaces = DownloadManager.class, key = Strategies.DownloadEngine.URL_CONNECTION, singleton = true, defaultImpl = true)
-public class DefaultDownloadManager implements DownloadManager {
+public class DefaultDownloadManager extends AbsDownloadManager<Object> {
 
   private static final String TAG = "RYDownloadFileHelper";
 
-  private final Map<String, DownloadRunnable> downloadTasks = new ConcurrentHashMap<>();
-
   @Override
-  public void download(String url, String filePath, DownloadListener downloadListener) {
-    if(!downloadTasks.containsKey(url)){
-      DownloadRunnable runnable = new DownloadRunnable(downloadTasks, url, filePath, downloadListener);
-      downloadTasks.put(url, runnable);
-      ExecutorUtils.getNormal().submit(runnable);
-    }else{
-      downloadListener.onDownloadFailed("already exist !");
-      LogUtils.e(TAG, "已有下载中的任务，取消");
-    }
+  protected AbsDownloadTask<Object> makeDownloadTask(String url, String filePath, DownloadListener downloadListener) {
+    return new DownloadRunnable(downloadTasks, url, filePath, downloadListener);
   }
 
-  @Override
-  public boolean isDownloading(String url) {
-    return downloadTasks.containsKey(url);
-  }
+  private static class DownloadRunnable extends AbsDownloadTask<Object>{
 
-  @Override
-  public int runningTasks() {
-    return downloadTasks.size();
-  }
-
-  @Override
-  public void terminate(String url) {
-    if(downloadTasks.containsKey(url)){
-      downloadTasks.get(url).terminate();
-      downloadTasks.remove(url);
-    }
-  }
-
-  @Override
-  public void terminateAll() {
-    Iterator<DownloadRunnable> iterator = downloadTasks.values().iterator();
-    while(iterator.hasNext()){
-      DownloadRunnable item = iterator.next();
-      item.terminate();
-      iterator.remove();
-    }
-  }
-
-  private static class DownloadRunnable extends ExecutorUtils.WorkRunnable{
-    private Map<String, DownloadRunnable> downloadTasks;
-    private final String urlLink;
-    private final String filePath;
-    private DownloadListener downloadListener;
-
-    private final AtomicBoolean running = new AtomicBoolean(true);
-
-    public DownloadRunnable(Map<String, DownloadRunnable> downloadTasks, String urlLink, String filePath, DownloadListener downloadListener) {
-      this.downloadTasks = downloadTasks;
-      this.urlLink = urlLink;
-      this.filePath = filePath;
-      this.downloadListener = downloadListener;
-    }
-
-    public void terminate(){
-      detach();
-      running.set(false);
-    }
-
-    private void detach(){
-      if(downloadTasks != null){
-        downloadTasks.remove(urlLink);
-        downloadTasks = null;
-      }
-      downloadListener = null;
+    public DownloadRunnable(Map<String, AbsDownloadTask<Object>> downloadTasks, String urlLink, String filePath, DownloadListener downloadListener) {
+      super(downloadTasks, urlLink, filePath, downloadListener);
     }
 
     @Override
-    public void run() {
+    protected void terminateClient(Object client) { }
+
+    @Override
+    protected Object makeClient() {
+      return null;
+    }
+
+    @Override
+    protected void onDownloading(Object client) {
       try {
         LogUtils.d(TAG, "--> 准备下载文件  --> url:" + urlLink + " --> 文件路径:" + filePath);
         notifyStart();
@@ -195,40 +140,6 @@ public class DefaultDownloadManager implements DownloadManager {
         LogUtils.e(TAG, "--> 文件下载出错！！！  --> e = " + e.getMessage());
         notifyFailed(e.getMessage());
       }
-    }
-
-    private void notifyStart(){
-      runOnUiThread(()->{
-        if(downloadListener != null){
-          downloadListener.onDownloadStart();
-        }
-      });
-    }
-
-    private void notifyProgress(long cur, long total){
-      runOnUiThread(()->{
-        if(downloadListener != null){
-          downloadListener.onDownloadProgress(cur, total);
-        }
-      });
-    }
-
-    private void notifyComplete(String filePath){
-      runOnUiThread(()->{
-        if(downloadListener != null){
-          downloadListener.onDownloadComplete(filePath);
-        }
-      });
-      detach();
-    }
-
-    private void notifyFailed(String err){
-      runOnUiThread(()->{
-        if(downloadListener != null){
-          downloadListener.onDownloadFailed(err);
-        }
-      });
-      detach();
     }
 
   }

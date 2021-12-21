@@ -1,8 +1,8 @@
 package com.sloth.film;
 
-import android.os.Environment;
 import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.Router;
+import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
@@ -12,7 +12,6 @@ import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.StringUtils;
-import com.sloth.tools.util.Utils;
 import org.greenrobot.greendao.query.QueryBuilder;
 import java.util.Collections;
 import java.util.List;
@@ -21,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
-import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -45,12 +44,10 @@ public class DownloadCenter {
 
     private final AtomicInteger policy = new AtomicInteger(-1);
     private final AtomicInteger concurrency = new AtomicInteger(-1);
-    private final DownloadManager downloadManager;
     private final FilmDataBaseConnection dbConnection;
     private Disposable loop;
 
     public DownloadCenter(FilmDataBaseConnection conn) {
-        downloadManager = Router.getService(DownloadManager.class, Strategies.DownloadEngine.LIU_LI_SHO);
         dbConnection = conn;
     }
 
@@ -65,8 +62,7 @@ public class DownloadCenter {
         Observable.interval(0, 10 * 60000, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .map(new ResetShuttingErrorFunc(reInit))
-                .map(b -> concurrency.get() - downloadManager.runningTasks())
-                .filter(free -> free > 0)
+                .map(b -> concurrency.get())
                 .map(new QueryFilmFunc())
                 .filter(films -> !films.isEmpty())
                 .flatMap(new FlatFilm())
@@ -77,7 +73,7 @@ public class DownloadCenter {
     }
 
     public void reDownload(Film film){
-        if(downloadManager.isDownloading(film.getOnlineUrl())){
+        if(getDownloadManager(film.getOnlineUrl()).isDownloading(film.getOnlineUrl())){
             return;
         }
         Observable.just(film)
@@ -88,13 +84,14 @@ public class DownloadCenter {
     }
 
     public void stopDownload(Film film){
-        if(downloadManager.isDownloading(film.getOnlineUrl())){
-            downloadManager.terminate(film.getOnlineUrl());
+        if(getDownloadManager(film.getOnlineUrl()).isDownloading(film.getOnlineUrl())){
+            getDownloadManager(film.getOnlineUrl()).terminate(film.getOnlineUrl());
         }
     }
 
     public void stopDownloadAll(){
-        downloadManager.terminateAll();
+        getHttpDownloadManager().terminateAll();
+        getTorrentDownloadManager().terminateAll();
     }
 
     public void destroy(){
@@ -118,9 +115,9 @@ public class DownloadCenter {
                 String ori = "update %s set %s = '%d' where %s = '%d';";
                 String sql = String.format(Locale.CHINA, ori,
                         FilmDao.TABLENAME,
-                        FilmDao.Properties.State,
+                        FilmDao.Properties.State.columnName,
                         FilmState.WAITING,
-                        FilmDao.Properties.State,
+                        FilmDao.Properties.State.columnName,
                         FilmState.DOWNLOADING );
                 dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
             }
@@ -132,10 +129,11 @@ public class DownloadCenter {
 
         @Override
         public List<Film> apply(@NonNull Integer free) throws Exception {
-            if(policy.get() == FilmCachePolicy.NEVER_DOWNLOAD){
+            if(policy.get() == FilmCachePolicy.NEVER_DOWNLOAD || free <= 0){
                 return Collections.emptyList();
             }
             QueryBuilder<Film> queryBuilder = dbConnection.getDaoSession().getFilmDao().queryBuilder();
+            queryBuilder.where(FilmDao.Properties.OnlineUrl.isNotNull());
 
             if(policy.get() == FilmCachePolicy.ALWAYS_DOWNLOAD){
                 queryBuilder.where(FilmDao.Properties.State.in(FilmState.DISABLE, FilmState.WAITING));
@@ -162,8 +160,8 @@ public class DownloadCenter {
 
         @Override
         public boolean test(@NonNull Film film) throws Exception {
-            if(StringUtils.notEmpty(film.getName()) && StringUtils.notEmpty(film.getOnlineUrl())){
-                return true;
+            if(StringUtils.notEmpty(film.getName())){
+                return getDownloadManager(film.getOnlineUrl()).runningTasks() < concurrency.get();
             }else{
                 //clear invalid film
                 dbConnection.getDaoSession().getFilmDao().deleteByKey(film.getId());
@@ -179,7 +177,7 @@ public class DownloadCenter {
             String ori = "update %s set %s = '%d' where %s = '%d';";
             String sql = String.format(Locale.CHINA, ori,
                     FilmDao.TABLENAME,
-                    FilmDao.Properties.State,
+                    FilmDao.Properties.State.columnName,
                     FilmState.DOWNLOADING,
                     FilmDao.Properties.Id,
                     film.getId() );
@@ -188,12 +186,17 @@ public class DownloadCenter {
         }
     }
 
-    private final class DownloadObserver extends DisposableObserver<Film>{
+    private final class DownloadObserver implements Observer<Film> {
+        @Override
+        public void onSubscribe(@NonNull Disposable d) {
+            loop = d;
+        }
+
         @Override
         public void onNext(@NonNull Film film) {
-            downloadManager.download(
+            getDownloadManager(film.getOnlineUrl()).download(
                     film.getOnlineUrl(),
-                    downloadFilePath(film.getId()),
+                    DownloadConstants.downloadMovieFilePath(film.getId()),
                     new DownloadCallback(film.getId()));
         }
 
@@ -253,7 +256,7 @@ public class DownloadCenter {
             String ori = "update %s set %s = '%d' where %s = '%d';";
             String sql = String.format(Locale.CHINA, ori,
                     FilmDao.TABLENAME,
-                    FilmDao.Properties.State,
+                    FilmDao.Properties.State.columnName,
                     (sus ? FilmState.OK : FilmState.DISABLE),
                     FilmDao.Properties.Id,
                     id );
@@ -262,12 +265,22 @@ public class DownloadCenter {
         }
     }
 
-    public static String getDownloadFolder(){
-        return Utils.getApp().getExternalFilesDir(Environment.DIRECTORY_MOVIES).getAbsolutePath();
+    private DownloadManager getDownloadManager(String url){
+        if(url.startsWith("magnet:") || url.startsWith("MAGNET:")){
+            //磁力链接
+            return getTorrentDownloadManager();
+        }else{
+            //http
+            return getHttpDownloadManager();
+        }
     }
 
-    public static String downloadFilePath(long id){
-        return getDownloadFolder() + id + ".mp4";
+    private DownloadManager getTorrentDownloadManager(){
+        return Router.getService(DownloadManager.class, Strategies.DownloadEngine.TORRENT);
+    }
+
+    private DownloadManager getHttpDownloadManager(){
+        return Router.getService(DownloadManager.class, Strategies.DownloadEngine.LIU_LI_SHO);
     }
 
 }

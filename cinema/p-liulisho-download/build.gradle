@@ -9,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion Integer.parseInt(MIN_SDK_VERSION)
         targetSdkVersion Integer.parseInt(TARGET_SDK_VERSION)
-        versionCode Integer.parseInt(PLATFORM_VERSION.replace('.',''))
-        versionName PLATFORM_VERSION
+        versionCode Integer.parseInt(P_LIU_LI_SHO_DOWNLOAD_VERSION.replace('.',''))
+        versionName P_LIU_LI_SHO_DOWNLOAD_VERSION
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"

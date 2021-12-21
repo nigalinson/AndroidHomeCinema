@@ -13,15 +13,21 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/crawler" />
             <option value="$PROJECT_DIR$/film" />
+            <option value="$PROJECT_DIR$/i-crawler" />
             <option value="$PROJECT_DIR$/i-film" />
             <option value="$PROJECT_DIR$/p-banner" />
             <option value="$PROJECT_DIR$/p-barcode" />
             <option value="$PROJECT_DIR$/p-ffmpeg-mediainfo-retriever" />
+            <option value="$PROJECT_DIR$/p-ftp-download" />
             <option value="$PROJECT_DIR$/p-liulisho-download" />
             <option value="$PROJECT_DIR$/p-player" />
+            <option value="$PROJECT_DIR$/p-thunder-download" />
+            <option value="$PROJECT_DIR$/p-torrent-download" />
             <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/push" />
+            <option value="$PROJECT_DIR$/thunder" />
             <option value="$PROJECT_DIR$/udp" />
           </set>
         </option>

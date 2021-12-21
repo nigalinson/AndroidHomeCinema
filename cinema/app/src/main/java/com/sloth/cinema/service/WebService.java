@@ -6,14 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.os.RemoteException;
 import androidx.annotation.Nullable;
+import com.sankuai.waimai.router.Router;
 import com.sloth.arp.ARP;
 import com.sloth.cinema.IWebServiceCallbackInterface;
 import com.sloth.cinema.IWebServiceInterface;
 import com.sloth.cinema.R;
 import com.sloth.cinema.push.PushConstants;
+import com.sloth.ifilm.FilmManager;
+import com.sloth.ifilm.Strategy;
 import com.sloth.push.PushData;
 import com.sloth.tools.util.GsonUtils;
 import com.sloth.tools.util.LogUtils;
@@ -42,10 +44,11 @@ public class WebService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
 
-    private PowerManager.WakeLock wakeLock;
     private Server server;
 
     private ARP arp;
+
+    private FilmManager filmManager;
 
     private final List<IWebServiceCallbackInterface> callbackInterfaceList = new ArrayList<>();
 
@@ -114,9 +117,17 @@ public class WebService extends Service {
         arp.startARP();
 
         registerPush();
+
+        filmManager = Router.getService(FilmManager.class, Strategy._DEFAULT);
+        filmManager.openEngine(true);
     }
 
     private void stopServer(){
+        if(filmManager != null){
+            filmManager.openEngine(false);
+            filmManager = null;
+        }
+
         unregisterPush();
 
         if(arp != null){

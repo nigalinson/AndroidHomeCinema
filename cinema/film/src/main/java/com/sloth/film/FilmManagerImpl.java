@@ -2,6 +2,7 @@ package com.sloth.film;
 
 import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.annotation.RouterService;
+import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
@@ -31,18 +32,31 @@ import io.reactivex.schedulers.Schedulers;
  * 2021/12/16         Carl            1.0                    1.0
  * Why & What is modified:
  */
-@RouterService(interfaces = FilmManager.class, key = Strategy.DEF, singleton = true, defaultImpl = true)
+@RouterService(interfaces = FilmManager.class, key = Strategy._DEFAULT, singleton = true, defaultImpl = true)
 public class FilmManagerImpl implements FilmManager {
 
     private final FilmDataBaseConnection filmDataBaseConnection;
     private final DownloadCenter downloadCenter;
+    private final CrawlerBridge crawlerBridge;
 
     public FilmManagerImpl() {
         filmDataBaseConnection = new FilmDataBaseConnection(Utils.getApp());
         int policy = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_CACHE_POLICY, FilmConstants.DEF_FILM_CACHE_POLICY);
-        int concurrency = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_DOWNLOAD_CONCURRENCY, FilmConstants.DEF_FILM_DOWNLOAD_CONCURRENCY);
-        downloadCenter = new DownloadCenter(filmDataBaseConnection).setPolicy(policy, concurrency);
-        downloadCenter.reStartDownloading(true);
+        int downloadConcurrency = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_DOWNLOAD_CONCURRENCY, FilmConstants.DEF_FILM_DOWNLOAD_CONCURRENCY);
+        downloadCenter = new DownloadCenter(filmDataBaseConnection).setPolicy(policy, downloadConcurrency);
+        crawlerBridge = new CrawlerBridge(filmDataBaseConnection);
+    }
+
+    @Override
+    public void openEngine(boolean open) {
+        if(open){
+            downloadCenter.reStartDownloading(true);
+            crawlerBridge.start();
+        }else{
+            downloadCenter.stopDownloadAll();
+            downloadCenter.destroy();
+            crawlerBridge.stop();
+        }
     }
 
     @Override
@@ -85,7 +99,7 @@ public class FilmManagerImpl implements FilmManager {
     public Observable<Boolean> removeFilm(long id) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
             filmDataBaseConnection.getDaoSession().getFilmDao().deleteByKey(id);
-            FileUtils.delete(DownloadCenter.downloadFilePath(id));
+            FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
             emitter.onNext(true);
             emitter.onComplete();
         }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());

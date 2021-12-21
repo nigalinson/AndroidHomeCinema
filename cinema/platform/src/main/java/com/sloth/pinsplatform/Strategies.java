@@ -26,6 +26,9 @@ public class Strategies {
     public static final class DownloadEngine {
         public static final String URL_CONNECTION = "urlConnection";
         public static final String LIU_LI_SHO = "liuLiShuo";
+        public static final String TORRENT = "torrent";
+        public static final String FTP = "ftp";
+        public static final String THUNDER = "thunder";
     }
 
 }

@@ -8,6 +8,7 @@ import com.sloth.ifilm.DaoSession;
 import com.sloth.tools.util.FileUtils;
 
 import org.greenrobot.greendao.database.Database;
+import org.greenrobot.greendao.identityscope.IdentityScopeType;
 import org.greenrobot.greendao.query.QueryBuilder;
 import java.io.File;
 
@@ -33,7 +34,7 @@ public class FilmDataBaseConnection {
         String filmDbPath = dir.getAbsolutePath() + "film-db";
         filmOrmUpgradeHelper = new FilmOrmUpgradeHelper(context, filmDbPath);
         Database db = filmOrmUpgradeHelper.getWritableDb();
-        mDaoSession = new DaoMaster(db).newSession();
+        mDaoSession = new DaoMaster(db).newSession(IdentityScopeType.None);
     }
 
     public DaoSession getDaoSession() {

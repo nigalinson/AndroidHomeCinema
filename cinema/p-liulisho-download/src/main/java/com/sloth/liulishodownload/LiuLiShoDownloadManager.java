@@ -1,20 +1,18 @@
 package com.sloth.liulishodownload;
 
-import android.os.Handler;
-import android.os.Looper;
 import com.liulishuo.filedownloader.BaseDownloadTask;
 import com.liulishuo.filedownloader.FileDownloadSampleListener;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.sankuai.waimai.router.annotation.RouterService;
+import com.sloth.functions.download.AbsDownloadManager;
+import com.sloth.functions.download.AbsDownloadTask;
 import com.sloth.pinsplatform.Strategies;
 import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
 import com.sloth.tools.util.LogUtils;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author:    Carl
@@ -28,69 +26,31 @@ import java.util.concurrent.ConcurrentHashMap;
  * Why & What is modified:
  */
 @RouterService(interfaces = DownloadManager.class, key = Strategies.DownloadEngine.LIU_LI_SHO, singleton = true)
-public class LiuLiShoDownloadManager implements DownloadManager {
+public class LiuLiShoDownloadManager extends AbsDownloadManager<BaseDownloadTask> {
 
     private static final String TAG = "LiuLiShoDownloadManager";
 
-    private final Map<String, MyDownloadTask> downloadTasks = new ConcurrentHashMap<>();
-
     @Override
-    public void download(String url, String filePath, DownloadListener downloadListener) {
-        if(!downloadTasks.containsKey(url)){
-            MyDownloadTask downloadTask = new MyDownloadTask(downloadTasks, url, filePath, downloadListener);
-            downloadTasks.put(url, downloadTask);
-            downloadTask.start();
-        }else{
-            downloadListener.onDownloadFailed("already exist !");
-            LogUtils.e(TAG, "已有下载中的任务，取消");
-        }
+    protected AbsDownloadTask<BaseDownloadTask> makeDownloadTask(String url, String filePath, DownloadListener downloadListener) {
+        return new LiuLiShoTask(downloadTasks, url, filePath, downloadListener);
     }
 
-    @Override
-    public boolean isDownloading(String url) {
-        return downloadTasks.containsKey(url);
-    }
+    private static final class LiuLiShoTask extends AbsDownloadTask<BaseDownloadTask> {
 
-    @Override
-    public int runningTasks() {
-        return downloadTasks.size();
-    }
-
-    @Override
-    public void terminate(String url) {
-        if(downloadTasks.containsKey(url)){
-            downloadTasks.get(url).pause();
-            downloadTasks.remove(url);
-        }
-    }
-
-    @Override
-    public void terminateAll() {
-        Iterator<MyDownloadTask> iterator = downloadTasks.values().iterator();
-        while(iterator.hasNext()){
-            MyDownloadTask item = iterator.next();
-            item.pause();
-            iterator.remove();
-        }
-    }
-
-    private static final class MyDownloadTask {
-        private final static Handler mainHandler = new Handler(Looper.getMainLooper());
-        private Map<String, MyDownloadTask> downloadTasks;
-        private final String urlLink;
-        private final String filePath;
-        private DownloadListener downloadListener;
-        private BaseDownloadTask realTask;
-
-        public MyDownloadTask(Map<String, MyDownloadTask> downloadTasks, String urlLink, String filePath, DownloadListener downloadListener) {
-            this.downloadTasks = downloadTasks;
-            this.urlLink = urlLink;
-            this.filePath = filePath;
-            this.downloadListener = downloadListener;
+        public LiuLiShoTask(Map<String, AbsDownloadTask<BaseDownloadTask>> downloadTasks, String urlLink, String filePath, DownloadListener downloadListener) {
+            super(downloadTasks, urlLink, filePath, downloadListener);
         }
 
-        private void start(){
-            realTask = FileDownloader.getImpl().create(urlLink)
+        @Override
+        protected void terminateClient(BaseDownloadTask client) {
+            if(client != null){
+                client.pause();
+            }
+        }
+
+        @Override
+        protected BaseDownloadTask makeClient() {
+            return FileDownloader.getImpl().create(urlLink)
                     .setPath(filePath)
                     .setCallbackProgressTimes(300)
                     .setMinIntervalUpdateSpeed(400)
@@ -108,8 +68,8 @@ public class LiuLiShoDownloadManager implements DownloadManager {
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                     LogUtils.e(TAG, "创建文件失败");
+                                    client.pause();
                                     notifyFailed("create file failed !");
-                                    pause();
                                     return;
                                 }
                             }
@@ -143,58 +103,11 @@ public class LiuLiShoDownloadManager implements DownloadManager {
                             notifyFailed(e != null ? e.getMessage() : "download failed !");
                         }
                     });
-
-            int taskId = realTask.start();
         }
 
-        private void pause(){
-            if(realTask != null && realTask.isRunning()){
-                realTask.pause();
-                realTask = null;
-            }
-            detach();
-        }
-
-        private void detach(){
-            if(downloadTasks != null){
-                downloadTasks.remove(urlLink);
-                downloadTasks = null;
-            }
-            downloadListener = null;
-        }
-        
-        private void notifyStart(){
-            mainHandler.post(()->{
-                if(downloadListener != null){
-                    downloadListener.onDownloadStart();
-                }
-            });
-        }
-
-        private void notifyProgress(long cur, long total){
-            mainHandler.post(()->{
-                if(downloadListener != null){
-                    downloadListener.onDownloadProgress(cur, total);
-                }
-            });
-        }
-
-        private void notifyComplete(String filePath){
-            mainHandler.post(()->{
-                if(downloadListener != null){
-                    downloadListener.onDownloadComplete(filePath);
-                }
-            });
-            detach();
-        }
-
-        private void notifyFailed(String err){
-            mainHandler.post(()->{
-                if(downloadListener != null){
-                    downloadListener.onDownloadFailed(err);
-                }
-            });
-            detach();
+        @Override
+        protected void onDownloading(BaseDownloadTask client) {
+            client.start();
         }
 
     }

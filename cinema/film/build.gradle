@@ -58,6 +58,7 @@ dependencies {
 
     api project(':platform')
     api project(':i-film')
+    api project(':i-crawler')
 
     implementation thirdDependencies.greendao
 

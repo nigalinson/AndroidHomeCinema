@@ -16,6 +16,8 @@ import io.reactivex.Observable;
  */
 public interface FilmManager {
 
+    void openEngine(boolean open);
+
     Observable<List<Film>> getFilms(FilmQueryParam param);
 
     Observable<Boolean> addFilm(Film film);

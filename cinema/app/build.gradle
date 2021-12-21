@@ -17,6 +17,11 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
+
+        ndk {
+            abiFilters "armeabi"
+        }
+
     }
 
     buildTypes {
@@ -58,11 +63,15 @@ dependencies {
     api project(':p-player')
     api project(':p-banner')
     api project(':p-liulisho-download')
+    api project(':p-torrent-download')
+    api project(':p-ftp-download')
+    api project(':p-thunder-download')
 
     api project(':udp')
     api project(':push')
 
     api project(':film')
+    api project(':crawler')
 
     implementation thirdDependencies.andServer
 

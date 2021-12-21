@@ -13,6 +13,6 @@ package com.sloth.ifilm;
  */
 public class Strategy {
 
-    public static final String DEF = "Strategy";
+    public static final String _DEFAULT = "DEFAULT_FILM_MANAGER";
 
 }
