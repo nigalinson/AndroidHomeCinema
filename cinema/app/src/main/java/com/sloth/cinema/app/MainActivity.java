@@ -9,18 +9,17 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
 import com.sloth.cinema.IWebServiceCallbackInterface;
 import com.sloth.cinema.IWebServiceInterface;
 import com.sloth.cinema.R;
 import com.sloth.cinema.service.WebService;
-import com.sloth.functions.download.DownloadConstants;
-import com.sloth.pinsplatform.download.DownloadListener;
-import com.sloth.thunder.ThunderDownloadManager;
 import com.sloth.tools.util.LogUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -129,29 +128,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        String path = DownloadConstants.getDownloadMovieFolder() + "/1234/def.mp4";
-        System.out.println("path: " + path);
-        ThunderDownloadManager downloadManager = new ThunderDownloadManager();
-        downloadManager.download("thunder://QUFmdHA6Ly9keWdvZDE6ZHlnb2QxQGQzOTMuZHlnb2Qub3JnOjkwNzUvWyVFNyU5NCVCNSVFNSVCRCVCMSVFNSVBNCVBOSVFNSVBMCU4Mi13d3cuZHkyMDE4Lm5ldF0uJUU5JTgwJTgzJUU3JUE2JUJCJUU1JUJFJUI3JUU5JUJCJTkxJUU1JTg1JUIwLjcyMHAuQkQlRTQlQjglQUQlRTglOEIlQjElRTUlOEYlOEMlRTUlQUQlOTclRTUlQjklOTUucm12Ylpa", path, new DownloadListener() {
-            @Override
-            public void onDownloadStart() {
-                System.out.println("halo: started !");
-            }
-
-            @Override
-            public void onDownloadProgress(long current, long total) {
-                System.out.println("progress: " + current + "/" + total);
-            }
-
-            @Override
-            public void onDownloadComplete(String filePath) {
-                System.out.println("complete: " + filePath);
-            }
-
-            @Override
-            public void onDownloadFailed(String errCode) {
-                System.out.println("failed: " + errCode);
-            }
-        });
+//        String path = DownloadConstants.getDownloadMovieFolder() + "/1234/def.mp4";
+//        System.out.println("path: " + path);
+//        ThunderDownloadManager downloadManager = new ThunderDownloadManager();
+//        downloadManager.download("thunder://QUFmdHA6Ly9keWdvZDE6ZHlnb2QxQGQzOTMuZHlnb2Qub3JnOjkwNzUvWyVFNyU5NCVCNSVFNSVCRCVCMSVFNSVBNCVBOSVFNSVBMCU4Mi13d3cuZHkyMDE4Lm5ldF0uJUU5JTgwJTgzJUU3JUE2JUJCJUU1JUJFJUI3JUU5JUJCJTkxJUU1JTg1JUIwLjcyMHAuQkQlRTQlQjglQUQlRTglOEIlQjElRTUlOEYlOEMlRTUlQUQlOTclRTUlQjklOTUucm12Ylpa", path, new DownloadListener() {
+//            @Override
+//            public void onDownloadStart() {
+//                System.out.println("halo: started !");
+//            }
+//
+//            @Override
+//            public void onDownloadProgress(long current, long total) {
+//                System.out.println("progress: " + current + "/" + total);
+//            }
+//
+//            @Override
+//            public void onDownloadComplete(String filePath) {
+//                System.out.println("complete: " + filePath);
+//            }
+//
+//            @Override
+//            public void onDownloadFailed(String errCode) {
+//                System.out.println("failed: " + errCode);
+//            }
+//        });
     }
 }

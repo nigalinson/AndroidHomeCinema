@@ -91,6 +91,7 @@ public class DownloadCenter {
 
     public void stopDownloadAll(){
         getHttpDownloadManager().terminateAll();
+        getFTPDownloadManager().terminateAll();
         getTorrentDownloadManager().terminateAll();
     }
 
@@ -269,6 +270,9 @@ public class DownloadCenter {
         if(url.startsWith("magnet:") || url.startsWith("MAGNET:")){
             //磁力链接
             return getTorrentDownloadManager();
+        }else if(url.startsWith("ftp") || url.startsWith("FTP")){
+            //ftp
+            return getFTPDownloadManager();
         }else{
             //http
             return getHttpDownloadManager();
@@ -277,6 +281,10 @@ public class DownloadCenter {
 
     private DownloadManager getTorrentDownloadManager(){
         return Router.getService(DownloadManager.class, Strategies.DownloadEngine.TORRENT);
+    }
+
+    private DownloadManager getFTPDownloadManager(){
+        return Router.getService(DownloadManager.class, Strategies.DownloadEngine.FTP);
     }
 
     private DownloadManager getHttpDownloadManager(){

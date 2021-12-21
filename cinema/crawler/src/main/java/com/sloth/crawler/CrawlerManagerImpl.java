@@ -5,6 +5,8 @@ import com.sloth.icrawler.CrawlerConstants;
 import com.sloth.icrawler.CrawlerManager;
 import com.sloth.icrawler.Strategy;
 import com.sloth.tools.util.SPUtils;
+import com.sloth.tools.util.Utils;
+import com.xunlei.downloadlib.XLTaskHelper;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,6 +34,8 @@ public class CrawlerManagerImpl implements CrawlerManager {
     public CrawlerManagerImpl() {
         int crawlerConcurrency = SPUtils.getInstance().getInt(CrawlerConstants.SP.KEY_FILM_CRAWLER_CONCURRENCY, CrawlerConstants.DEF_FILM_CRAWLER_CONCURRENCY);
         concurrency.set(crawlerConcurrency);
+
+        XLTaskHelper.init(Utils.getApp());
     }
 
     @Override

@@ -65,7 +65,6 @@ dependencies {
     api project(':p-liulisho-download')
     api project(':p-torrent-download')
     api project(':p-ftp-download')
-    api project(':p-thunder-download')
 
     api project(':udp')
     api project(':push')

@@ -49,6 +49,7 @@ dependencies {
 
     api project(':i-crawler')
     api project(':platform')
+    api project(':thunder')
 
     implementation files('libs/juniversalchardet-1.0.3.jar')
     implementation files('libs/jsoup-1.11.3.jar')
