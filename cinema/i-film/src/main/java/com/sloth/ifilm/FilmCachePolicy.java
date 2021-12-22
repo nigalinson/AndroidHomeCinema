@@ -16,13 +16,11 @@ import java.lang.annotation.RetentionPolicy;
  * 2021/12/16         Carl            1.0                    1.0
  * Why & What is modified:
  */
-@IntDef({FilmCachePolicy.ALWAYS_DOWNLOAD, FilmCachePolicy.DOWNLOAD_ONCE, FilmCachePolicy.NEVER_DOWNLOAD })
+@IntDef({FilmCachePolicy.ALWAYS_DOWNLOAD, FilmCachePolicy.NEVER_DOWNLOAD })
 @Retention(RetentionPolicy.SOURCE)
 public @interface FilmCachePolicy {
 
     int ALWAYS_DOWNLOAD = 0;
-
-    int DOWNLOAD_ONCE = 1;
 
     int NEVER_DOWNLOAD = 2;
 

@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'org.greenrobot.greendao'
 }
 
 android {
@@ -36,6 +37,13 @@ android {
             }
         }
     }
+
+    greendao {
+        schemaVersion 1
+        daoPackage 'com.sloth.crawler.greendao'
+        targetGenDir 'src/main/java'
+    }
+
 }
 
 dependencies {
@@ -53,10 +61,11 @@ dependencies {
 
     implementation files('libs/juniversalchardet-1.0.3.jar')
     implementation files('libs/jsoup-1.11.3.jar')
-    implementation files('libs/rocksdbjni-5.14.2.jar')
 
     implementation thirdDependencies.okhttp
     implementation thirdDependencies.gson
+
+    implementation thirdDependencies.greendao
 
     annotationProcessor thirdDependencies.wmRouterAnno
 

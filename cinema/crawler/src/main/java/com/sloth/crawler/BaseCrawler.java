@@ -1,10 +1,9 @@
 package com.sloth.crawler;
 
 import com.sloth.icrawler.CrawlerManager;
-import java.util.Collections;
-import java.util.List;
+
 import cn.edu.hfut.dmic.webcollector.plugin.net.OkHttpRequester;
-import cn.edu.hfut.dmic.webcollector.plugin.rocks.BreadthCrawler;
+import cn.edu.hfut.dmic.webcollector.plugin.ram.RamCrawler;
 import okhttp3.OkHttpClient;
 
 /**
@@ -18,7 +17,7 @@ import okhttp3.OkHttpClient;
  * 2021/12/20         Carl            1.0                    1.0
  * Why & What is modified:
  */
-public abstract class BaseCrawler extends BreadthCrawler {
+public abstract class BaseCrawler extends RamCrawler {
 
     protected final int DEPTH = 10;
 
@@ -28,12 +27,12 @@ public abstract class BaseCrawler extends BreadthCrawler {
 
     protected final String name;
 
-    public BaseCrawler(String url, long id, String name, int concurrency) {
-        super(url, false);
+    public BaseCrawler(long id, String name, int concurrency) {
+        super(false);
         this.id = id;
         this.name = name;
 //        getConf().setDefaultCookie(cookie);
-        getConf().setExecuteInterval(1000);
+        getConf().setExecuteInterval(5000);
         getConf().set("title_prefix","PREFIX_");
         getConf().set("content_length_limit", 200);
         setRequester(new OkHttpRequester() {
@@ -62,15 +61,12 @@ public abstract class BaseCrawler extends BreadthCrawler {
         return this;
     }
 
-
-    protected void notifyCrawlerResult(List<String> urls){
+    protected void notifyCrawlerResult(String url){
         if(crawlerListener != null){
             crawlerListener.onCrawlerResult(
                     id,
                     name,
-                    (urls == null || urls.isEmpty())
-                            ? Collections.emptyList()
-                            : urls
+                    url
             );
         }
     }

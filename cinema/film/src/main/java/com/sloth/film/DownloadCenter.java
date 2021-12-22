@@ -1,18 +1,24 @@
 package com.sloth.film;
 
+import android.database.Cursor;
 import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.Router;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
+import com.sloth.ifilm.FilmLink;
+import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmState;
+import com.sloth.ifilm.LinkState;
 import com.sloth.pinsplatform.Strategies;
 import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.StringUtils;
+
 import org.greenrobot.greendao.query.QueryBuilder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -24,7 +30,6 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -57,35 +62,37 @@ public class DownloadCenter {
         return this;
     }
 
-    public void reStartDownloading(boolean reInit){
+    public void reStartDownloading(){
         destroy();
-        Observable.interval(0, 10 * 60000, TimeUnit.MILLISECONDS)
+        Observable.interval(1000, 30 * 60 * 1000, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
-                .map(new ResetShuttingErrorFunc(reInit))
                 .map(b -> concurrency.get())
                 .map(new QueryFilmFunc())
                 .filter(films -> !films.isEmpty())
                 .flatMap(new FlatFilm())
-                .filter(new ifValidFilm())
-                .map(new UpdateDownloadingFunc())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DownloadObserver());
     }
 
     public void reDownload(Film film){
-        if(getDownloadManager(film.getOnlineUrl()).isDownloading(film.getOnlineUrl())){
+        FilmLink link = findFirstUsableLink(film);
+
+        if(link == null || StringUtils.isEmpty(link.getUrl())){
+            LogUtils.e(TAG, "find none usable download link !");
             return;
         }
+
         Observable.just(film)
-                .map(new UpdateDownloadingFunc())
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DownloadObserver());
     }
 
     public void stopDownload(Film film){
-        if(getDownloadManager(film.getOnlineUrl()).isDownloading(film.getOnlineUrl())){
-            getDownloadManager(film.getOnlineUrl()).terminate(film.getOnlineUrl());
+        FilmLink link = findFirstUsableLink(film);
+        if(link != null && StringUtils.notEmpty(link.getUrl())
+                && getDownloadManager(link.getUrl()).isDownloading(link.getUrl())){
+            getDownloadManager(link.getUrl()).terminate(link.getUrl());
         }
     }
 
@@ -102,30 +109,6 @@ public class DownloadCenter {
         }
     }
 
-    private final class ResetShuttingErrorFunc implements Function<Long, Boolean> {
-
-        private final boolean reset;
-
-        public ResetShuttingErrorFunc(boolean reset) {
-            this.reset = reset;
-        }
-
-        @Override
-        public Boolean apply(@NonNull Long aLong) throws Exception {
-            if(reset){
-                String ori = "update %s set %s = '%d' where %s = '%d';";
-                String sql = String.format(Locale.CHINA, ori,
-                        FilmDao.TABLENAME,
-                        FilmDao.Properties.State.columnName,
-                        FilmState.WAITING,
-                        FilmDao.Properties.State.columnName,
-                        FilmState.DOWNLOADING );
-                dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-            }
-            return true;
-        }
-    }
-
     private final class QueryFilmFunc implements Function<Integer, List<Film>> {
 
         @Override
@@ -133,19 +116,38 @@ public class DownloadCenter {
             if(policy.get() == FilmCachePolicy.NEVER_DOWNLOAD || free <= 0){
                 return Collections.emptyList();
             }
-            QueryBuilder<Film> queryBuilder = dbConnection.getDaoSession().getFilmDao().queryBuilder();
-            queryBuilder.where(FilmDao.Properties.OnlineUrl.isNotNull());
+            List<Film> result = new ArrayList<>();
+            Cursor filmCursor = buildFilmCursor();
 
-            if(policy.get() == FilmCachePolicy.ALWAYS_DOWNLOAD){
-                queryBuilder.where(FilmDao.Properties.State.in(FilmState.DISABLE, FilmState.WAITING));
-            }else if(policy.get() == FilmCachePolicy.DOWNLOAD_ONCE){
-                queryBuilder.where(FilmDao.Properties.State.eq(FilmState.WAITING));
-            }else{
-                return Collections.emptyList();
+            while(filmCursor.moveToNext()){
+                Long id = filmCursor.getLong(0);
+                String name = filmCursor.getString(1);
+                Integer state = filmCursor.getInt(2);
+                Long time = filmCursor.getLong(3);
+                QueryBuilder<FilmLink> queryBuilder = dbConnection.getDaoSession().getFilmLinkDao().queryBuilder();
+                queryBuilder.where(FilmLinkDao.Properties.FilmId.eq(id), FilmLinkDao.Properties.State.eq(LinkState.WAIT));
+                List<FilmLink> links = queryBuilder.list();
+                if(links.size() > 0){
+                    Film film = new Film(id, name, state, time);
+                    film.setLinks(links);
+                    result.add(film);
+                }
+                if(result.size() >= free){
+                    break;
+                }
             }
+            filmCursor.close();
+            return result;
+        }
 
-            queryBuilder.limit(free);
-            return queryBuilder.list();
+        private Cursor buildFilmCursor() {
+            String ori = "select * from %s where %s == %d;";
+            String sql = String.format(Locale.CHINA, ori,
+                    FilmDao.TABLENAME,
+                    FilmDao.Properties.State.columnName,
+                    FilmState.WAIT
+            );
+            return dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
         }
     }
 
@@ -157,36 +159,6 @@ public class DownloadCenter {
         }
     }
 
-    private final class ifValidFilm implements Predicate<Film> {
-
-        @Override
-        public boolean test(@NonNull Film film) throws Exception {
-            if(StringUtils.notEmpty(film.getName())){
-                return getDownloadManager(film.getOnlineUrl()).runningTasks() < concurrency.get();
-            }else{
-                //clear invalid film
-                dbConnection.getDaoSession().getFilmDao().deleteByKey(film.getId());
-                return false;
-            }
-        }
-    }
-
-    private final class UpdateDownloadingFunc implements Function<Film, Film>{
-
-        @Override
-        public Film apply(@NonNull Film film) throws Exception {
-            String ori = "update %s set %s = '%d' where %s = '%d';";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmDao.TABLENAME,
-                    FilmDao.Properties.State.columnName,
-                    FilmState.DOWNLOADING,
-                    FilmDao.Properties.Id,
-                    film.getId() );
-            dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-            return film;
-        }
-    }
-
     private final class DownloadObserver implements Observer<Film> {
         @Override
         public void onSubscribe(@NonNull Disposable d) {
@@ -195,10 +167,14 @@ public class DownloadCenter {
 
         @Override
         public void onNext(@NonNull Film film) {
-            getDownloadManager(film.getOnlineUrl()).download(
-                    film.getOnlineUrl(),
+            FilmLink link = findFirstUsableLink(film);
+            if(link == null){
+                throw new RuntimeException("found none link !");
+            }
+            getDownloadManager(link.getUrl()).download(
+                    link.getUrl(),
                     DownloadConstants.downloadMovieFilePath(film.getId()),
-                    new DownloadCallback(film.getId()));
+                    new DownloadCallback(film.getId(), link.getId()));
         }
 
         @Override
@@ -212,10 +188,12 @@ public class DownloadCenter {
 
     private class DownloadCallback implements DownloadListener{
 
-        private final long id;
+        private final long filmId;
+        private final long linkId;
 
-        public DownloadCallback(long id) {
-            this.id = id;
+        public DownloadCallback(long filmId, long linkId) {
+            this.filmId = filmId;
+            this.linkId = linkId;
         }
 
         @Override
@@ -226,18 +204,18 @@ public class DownloadCenter {
 
         @Override
         public void onDownloadComplete(String filePath) {
-            onDownloadFinish(true, id);
+            onDownloadFinish(true);
         }
 
 
         @Override
         public void onDownloadFailed(String errCode) {
-            onDownloadFinish(false, id);
+            onDownloadFinish(false);
         }
 
-        protected void onDownloadFinish(boolean res, long id){
+        protected void onDownloadFinish(boolean res){
             Observable.just(res)
-                    .map(new UpdateCompleteFunc(id))
+                    .map(new UpdateCompleteFunc(filmId, linkId))
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe();
@@ -246,23 +224,45 @@ public class DownloadCenter {
 
     private final class UpdateCompleteFunc implements Function<Boolean, Boolean>{
 
-        private final long id;
+        private final long filmId;
+        private final long linkId;
 
-        public UpdateCompleteFunc(long id) {
-            this.id = id;
+        public UpdateCompleteFunc(long filmId, long linkId) {
+            this.filmId = filmId;
+            this.linkId = linkId;
         }
 
         @Override
         public Boolean apply(@NonNull Boolean sus) throws Exception {
-            String ori = "update %s set %s = '%d' where %s = '%d';";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmDao.TABLENAME,
-                    FilmDao.Properties.State.columnName,
-                    (sus ? FilmState.OK : FilmState.DISABLE),
-                    FilmDao.Properties.Id,
-                    id );
-            dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+            editLinkState(sus);
+            editFilmState(sus);
             return true;
+        }
+
+        private void editLinkState(Boolean sus) {
+            if(!sus){
+                String ori = "update %s set %s = '%d' where %s = '%d';";
+                String sql = String.format(Locale.CHINA, ori,
+                        FilmLinkDao.TABLENAME,
+                        FilmLinkDao.Properties.State.columnName,
+                        LinkState.USELESS,
+                        FilmLinkDao.Properties.Id,
+                        linkId);
+                dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+            }
+        }
+
+        private void editFilmState(Boolean sus) {
+            if(sus){
+                String ori = "update %s set %s = '%d' where %s = '%d';";
+                String sql = String.format(Locale.CHINA, ori,
+                        FilmDao.TABLENAME,
+                        FilmDao.Properties.State.columnName,
+                        FilmState.OK,
+                        FilmDao.Properties.Id,
+                        filmId );
+                dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+            }
         }
     }
 
@@ -291,4 +291,14 @@ public class DownloadCenter {
         return Router.getService(DownloadManager.class, Strategies.DownloadEngine.LIU_LI_SHO);
     }
 
+    private static FilmLink findFirstUsableLink(Film film){
+        if(film.getLinks() != null && film.getLinks().size() > 0){
+            for(FilmLink link: film.getLinks()){
+                if(link.getState() == LinkState.WAIT){
+                    return link;
+                }
+            }
+        }
+        return null;
+    }
 }

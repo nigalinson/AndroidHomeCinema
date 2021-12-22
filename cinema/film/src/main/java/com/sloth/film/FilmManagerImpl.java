@@ -1,20 +1,28 @@
 package com.sloth.film;
 
 import androidx.annotation.NonNull;
+
 import com.sankuai.waimai.router.annotation.RouterService;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
+import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmManager;
 import com.sloth.ifilm.FilmQueryParam;
+import com.sloth.ifilm.FilmState;
 import com.sloth.ifilm.Strategy;
 import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
+
 import org.greenrobot.greendao.query.QueryBuilder;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -50,7 +58,7 @@ public class FilmManagerImpl implements FilmManager {
     @Override
     public void openEngine(boolean open) {
         if(open){
-            downloadCenter.reStartDownloading(true);
+            downloadCenter.reStartDownloading();
             crawlerBridge.start();
         }else{
             downloadCenter.stopDownloadAll();
@@ -80,6 +88,9 @@ public class FilmManagerImpl implements FilmManager {
     @Override
     public Observable<Boolean> addFilm(Film film) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            film.setState(FilmState.WAIT);
+            film.setLinks(new ArrayList<>());
+            film.setCreateTime(System.currentTimeMillis());
             filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
             emitter.onNext(true);
             emitter.onComplete();
@@ -89,6 +100,7 @@ public class FilmManagerImpl implements FilmManager {
     @Override
     public Observable<Boolean> editFilm(Film film) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            film.setCreateTime(System.currentTimeMillis());
             filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
             emitter.onNext(true);
             emitter.onComplete();
@@ -98,6 +110,14 @@ public class FilmManagerImpl implements FilmManager {
     @Override
     public Observable<Boolean> removeFilm(long id) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            String ori = "delete from %s where %s == %d;";
+            String sql = String.format(Locale.CHINA, ori,
+                    FilmLinkDao.TABLENAME,
+                    FilmLinkDao.Properties.FilmId.columnName,
+                    id
+            );
+            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+
             filmDataBaseConnection.getDaoSession().getFilmDao().deleteByKey(id);
             FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
             emitter.onNext(true);

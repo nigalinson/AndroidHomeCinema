@@ -1,7 +1,5 @@
 package com.sloth.icrawler;
 
-import java.util.List;
-
 /**
  * Author:    Carl
  * Version    V1.0
@@ -22,6 +20,6 @@ public interface CrawlerManager {
     void clear();
 
     interface CrawlerListener{
-        void onCrawlerResult(long id, String name, List<String> urls);
+        void onCrawlerResult(long id, String name, String url);
     }
 }

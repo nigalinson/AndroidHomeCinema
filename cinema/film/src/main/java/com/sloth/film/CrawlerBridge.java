@@ -6,11 +6,13 @@ import com.sloth.icrawler.CrawlerManager;
 import com.sloth.icrawler.Strategy;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmDao;
+import com.sloth.ifilm.FilmLink;
+import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmState;
+import com.sloth.ifilm.LinkState;
 import com.sloth.tools.util.LogUtils;
 import org.greenrobot.greendao.query.QueryBuilder;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
@@ -46,7 +48,7 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
 
     public void start(){
         stop();
-        Observable.interval(2 * 1000, 10 * 60 * 1000, TimeUnit.MILLISECONDS)
+        Observable.interval(10 * 1000, 30 * 60 * 1000, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .map(new ClearCrawlerFunc())
                 .map(new QueryFilmFunc())
@@ -84,9 +86,8 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
         @Override
         public List<Film> apply(@NonNull Boolean arg) throws Exception {
             QueryBuilder<Film> queryBuilder = dbConnection.getDaoSession().getFilmDao().queryBuilder();
-            queryBuilder.where(FilmDao.Properties.OnlineUrl.isNull());
-            queryBuilder.where(FilmDao.Properties.State.eq(FilmState.WAITING));
-            queryBuilder.limit(20);
+            queryBuilder.where(FilmDao.Properties.State.eq(FilmState.WAIT));
+            queryBuilder.limit(10);
             return queryBuilder.list();
         }
     }
@@ -109,25 +110,12 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
     }
 
     @Override
-    public void onCrawlerResult(long id, String name, List<String> urls) {
-        if(urls.isEmpty()){
-            String ori = "update %s set %s = '%d' where %s = '%d';";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmDao.TABLENAME,
-                    FilmDao.Properties.State.columnName,
-                    FilmState.DISABLE,
-                    FilmDao.Properties.Id.columnName,
-                    id);
-            dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-        }else{
-            String ori = "update %s set %s = '%s' where %s = '%d';";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmDao.TABLENAME,
-                    FilmDao.Properties.OnlineUrl,
-                    urls.get(0),
-                    FilmDao.Properties.Id,
-                    id);
-            dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+    public void onCrawlerResult(long id, String name, String url) {
+        boolean exist = dbConnection.getDaoSession().getFilmLinkDao().queryBuilder()
+                .where(FilmLinkDao.Properties.FilmId.eq(id), FilmLinkDao.Properties.Url.eq(url))
+                .list().size() > 0;
+        if(!exist){
+            dbConnection.getDaoSession().getFilmLinkDao().insert(new FilmLink(null, id, LinkState.WAIT, url));
         }
     }
 

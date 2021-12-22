@@ -15,22 +15,19 @@ import java.lang.annotation.RetentionPolicy;
  * 2021/12/16         Carl            1.0                    1.0
  * Why & What is modified:
  */
-@IntDef({FilmState.DISABLE, FilmState.WAITING, FilmState.DOWNLOADING, FilmState.OK })
+@IntDef({FilmState.WAIT, FilmState.OK })
 @Retention(RetentionPolicy.SOURCE)
 public @interface FilmState {
 
     /**
-     * will not be operated until user take it
+     * can't watch yet
+     * searching for resources, try to download links
      */
-    int DISABLE = 2;
+    int WAIT = 1;
 
     /**
-     * will be start download if prepared
+     * has found link and download movie success
      */
-    int WAITING = 0;
-
-    int DOWNLOADING = 100;
-
-    int OK = 200;
+    int OK = 2;
 
 }

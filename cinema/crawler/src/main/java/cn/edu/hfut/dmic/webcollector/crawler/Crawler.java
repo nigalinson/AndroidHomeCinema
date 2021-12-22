@@ -261,8 +261,6 @@ public class Crawler extends DefaultConfigured {
     }
 
 
-
-
     /**
      * 与addSeed(CrawlDatum datum)类似
      *

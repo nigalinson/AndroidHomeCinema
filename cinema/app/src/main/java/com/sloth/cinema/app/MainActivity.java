@@ -20,6 +20,7 @@ import com.sloth.cinema.IWebServiceCallbackInterface;
 import com.sloth.cinema.IWebServiceInterface;
 import com.sloth.cinema.R;
 import com.sloth.cinema.service.WebService;
+import com.sloth.crawler.MovieParadiseCrawler;
 import com.sloth.tools.util.LogUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
         tvMsg = findViewById(R.id.msg);
         findViewById(R.id.btn_open).setOnClickListener(v -> ifPermissionOk());
         findViewById(R.id.btn_close).setOnClickListener(v -> stopAll());
-
     }
 
     @Override
@@ -128,29 +128,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-//        String path = DownloadConstants.getDownloadMovieFolder() + "/1234/def.mp4";
-//        System.out.println("path: " + path);
-//        ThunderDownloadManager downloadManager = new ThunderDownloadManager();
-//        downloadManager.download("thunder://QUFmdHA6Ly9keWdvZDE6ZHlnb2QxQGQzOTMuZHlnb2Qub3JnOjkwNzUvWyVFNyU5NCVCNSVFNSVCRCVCMSVFNSVBNCVBOSVFNSVBMCU4Mi13d3cuZHkyMDE4Lm5ldF0uJUU5JTgwJTgzJUU3JUE2JUJCJUU1JUJFJUI3JUU5JUJCJTkxJUU1JTg1JUIwLjcyMHAuQkQlRTQlQjglQUQlRTglOEIlQjElRTUlOEYlOEMlRTUlQUQlOTclRTUlQjklOTUucm12Ylpa", path, new DownloadListener() {
-//            @Override
-//            public void onDownloadStart() {
-//                System.out.println("halo: started !");
-//            }
-//
-//            @Override
-//            public void onDownloadProgress(long current, long total) {
-//                System.out.println("progress: " + current + "/" + total);
-//            }
-//
-//            @Override
-//            public void onDownloadComplete(String filePath) {
-//                System.out.println("complete: " + filePath);
-//            }
-//
-//            @Override
-//            public void onDownloadFailed(String errCode) {
-//                System.out.println("failed: " + errCode);
-//            }
-//        });
+
+        new Thread(() -> new MovieParadiseCrawler(1, "你好", 5).listener((id, name, url) -> {
+            System.out.println("find url: " + url);
+        }).run()).start();
+
     }
 }
