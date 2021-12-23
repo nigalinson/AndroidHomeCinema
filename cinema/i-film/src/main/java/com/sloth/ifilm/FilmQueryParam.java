@@ -1,5 +1,7 @@
 package com.sloth.ifilm;
 
+import com.sloth.tools.util.StringUtils;
+
 /**
  * Author:    Carl
  * Version    V1.0
@@ -52,16 +54,35 @@ public class FilmQueryParam {
 
         private String name;
 
-        public void setPageIndex(int pageIndex) {
+        public Builder setPageIndex(int pageIndex) {
             this.pageIndex = pageIndex;
+            return this;
         }
 
-        public void setPageSize(int pageSize) {
+        public Builder setPageIndex(String pageIndex) {
+            if(StringUtils.notEmpty(pageIndex)){
+                this.pageIndex = Integer.parseInt(pageIndex);
+            }
+            return this;
+        }
+
+        public Builder setPageSize(int pageSize) {
             this.pageSize = pageSize;
+            return this;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public Builder setPageSize(String pageSize) {
+            if(StringUtils.notEmpty(pageSize)){
+                this.pageSize = Integer.parseInt(pageSize);
+            }
+            return this;
+        }
+
+        public Builder setName(String name) {
+            if(StringUtils.notEmpty(name) && !"null".equals(name)){
+                this.name = name;
+            }
+            return this;
         }
 
         public FilmQueryParam build(){

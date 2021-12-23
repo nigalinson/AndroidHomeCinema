@@ -5,6 +5,8 @@ import com.sloth.tools.util.EncodeUtils;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.StringUtils;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.HashMap;
 import java.util.Map;
 import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
@@ -27,7 +29,7 @@ import okhttp3.OkHttpClient;
 public class InfoCrawler extends RamCrawler {
     private static final String TAG = "InfoCrawler";
 
-    private static final String URL = "https://search.douban.com";
+    private static final String URL = "https://www.baidu.com";
 
     protected final int DEPTH = 3;
 
@@ -57,9 +59,12 @@ public class InfoCrawler extends RamCrawler {
         setThreads(1);
         getConf().setTopN(100);
 
+        infos.put("name", name);
+        infos.put("intro", "no message");
+
         String formName = formedName(name);
         if(StringUtils.notEmpty(formName)){
-            String url = URL + "/movie/subject_search?search_text=" + formName;
+            String url = URL + "/s?wd=" + formName;
             LogUtils.d(TAG, "add seeds: " + url);
             addSeedAndReturn(url).type("list");
         }
@@ -93,8 +98,7 @@ public class InfoCrawler extends RamCrawler {
     public void visit(Page page, CrawlDatums next) {
         if(page.matchType("list")){
             LogUtils.d(TAG, "list page: " + page.url());
-            Element linkElement = page.select(".sc-bZQynM .kLDhtO .sc-bxivhb .jDZFxE")
-                    .select("detail").select("title").select("a").first();
+            Element linkElement = page.select("#content_left").first().selectFirst("a");
             String link = linkElement.attr("href");
             String name = linkElement.text();
             infos.put("name", name);
@@ -103,11 +107,21 @@ public class InfoCrawler extends RamCrawler {
             next.addAndReturn(link).type("detail");
         }else if(page.matchType("detail")){
             LogUtils.d(TAG, "detail page: " + page.url());
-            Element imgElement = page.select(".article").select("img").first();
-            String img = imgElement.attr("src");
-            infos.put("img", img);
 
-            Element introElement = page.select(".related-info").select("span").first();
+            String title = page.select("h1").first().text();
+            infos.put("name", title);
+
+            Elements imgElements = page.select("img");
+            for(Element imgElement: imgElements){
+                String img = imgElement.attr("src");
+                if(img.startsWith("http")){
+                    infos.put("img", img);
+                    break;
+                }
+            }
+
+
+            Element introElement = page.select(".lemmaWgt-lemmaSummary").first();
             String intro = introElement.text();
             infos.put("intro", intro);
             notifyCrawlerResult();

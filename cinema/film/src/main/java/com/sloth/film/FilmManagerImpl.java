@@ -1,8 +1,9 @@
 package com.sloth.film;
 
-import androidx.annotation.NonNull;
+import com.sankuai.waimai.router.Router;
 import com.sankuai.waimai.router.annotation.RouterService;
 import com.sloth.functions.download.DownloadConstants;
+import com.sloth.icrawler.InfoFinder;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmDao;
 import com.sloth.ifilm.FilmLinkDao;
@@ -15,15 +16,12 @@ import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
+
 import org.greenrobot.greendao.query.QueryBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import io.reactivex.Observable;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 
 /**
  * Author:    Carl
@@ -61,193 +59,104 @@ public class FilmManagerImpl implements FilmManager {
     }
 
     @Override
-    public Observable<List<Film>> getFilms(FilmQueryParam param) {
-        return Observable.create((ObservableOnSubscribe<List<Film>>) emitter -> {
-            QueryBuilder<Film> queryBuilder = filmDataBaseConnection.getDaoSession().getFilmDao().queryBuilder();
-
-            if(StringUtils.notEmpty(param.getName())){
-                queryBuilder.where(FilmDao.Properties.Name.like("%"+param.getName()+"%"));
-            }
-
-            int start = param.getPageIndex() * param.getPageSize();
-            int size = param.getPageSize();
-            queryBuilder.offset(start).limit(size);
-
-            emitter.onNext(queryBuilder.list());
-            emitter.onComplete();
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    public List<Film> getFilms(FilmQueryParam param) {
+        QueryBuilder<Film> queryBuilder = filmDataBaseConnection.getDaoSession().getFilmDao().queryBuilder();
+        if(StringUtils.notEmpty(param.getName())){
+            queryBuilder.where(FilmDao.Properties.Name.like("%"+param.getName()+"%"));
+        }
+        int start = param.getPageIndex() * param.getPageSize();
+        int size = param.getPageSize();
+        queryBuilder.offset(start).limit(size);
+        return queryBuilder.list();
     }
 
     @Override
-    public Observable<Boolean> addFilm(String name) {
-        return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
-            Film film = new Film();
-            film.setName(name);
-            film.setState(FilmState.WAIT);
-            film.setLinks(new ArrayList<>());
-            film.setCreateTime(System.currentTimeMillis());
-            filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
-            emitter.onNext(true);
-            emitter.onComplete();
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
+    public void addFilm(String name) {
+        Film film = new Film();
+        film.setName(name);
+        film.setState(FilmState.WAIT);
+        film.setLinks(new ArrayList<>());
+        film.setCreateTime(System.currentTimeMillis());
+        long id = filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
 
-    @Override
-    public Observable<Boolean> searchFilmResources(long filmId) {
-        return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
-            crawlerBridge.crawler(filmId);
-            emitter.onNext(true);
-            emitter.onComplete();
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> removeFilm(long id) {
-        return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
-            String ori = "delete from %s where %s == %d;";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmLinkDao.TABLENAME,
-                    FilmLinkDao.Properties.FilmId.columnName,
-                    id
-            );
-            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-
-            filmDataBaseConnection.getDaoSession().getFilmDao().deleteByKey(id);
-            FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
-            emitter.onNext(true);
-            emitter.onComplete();
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> downloadFilm(long id) {
-        return Observable.just(id)
-                .subscribeOn(Schedulers.io())
-                .map(new DownloadFilmFunc())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> downloadFilmByLink(long filmId, long linkId) {
-        return Observable.just(filmId)
-                .subscribeOn(Schedulers.io())
-                .map(new DownloadFilmByLinkFunc(linkId))
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> removeFilmCache(long id) {
-        return Observable.just(id)
-                .subscribeOn(Schedulers.io())
-                .map(new DeleteFilmCacheFunc())
-                .map(new UselessFilmFunc())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .map(new StopDownloadFilmFunc())
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> disableLink(long linkId) {
-        return Observable.just(true)
-                .subscribeOn(Schedulers.io())
-                .map(new DisableFirstLinkFunc(linkId))
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    private final class QueryFilmByIdFunc implements Function<Long, Film>{
-
-        @Override
-        public Film apply(@NonNull Long aId) throws Exception {
-            List<Film> films = filmDataBaseConnection.getDaoSession().getFilmDao().queryBuilder()
-                    .where(FilmDao.Properties.Id.eq(aId)).list();
-            if(!films.isEmpty()){
-                return films.get(0);
-            }else{
-                throw new RuntimeException("film not exists");
-            }
-        }
-    }
-
-    private final class DisableFirstLinkFunc implements Function<Boolean, Boolean>{
-
-        private final Long linkId;
-
-        public DisableFirstLinkFunc(Long linkId) {
-            this.linkId = linkId;
-        }
-
-        @Override
-        public Boolean apply(@NonNull Boolean r) throws Exception {
-            String ori = "update %s set %s = '%d' where %s = '%d';";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmLinkDao.TABLENAME,
-                    FilmLinkDao.Properties.State.columnName,
-                    LinkState.USELESS,
-                    FilmLinkDao.Properties.Id,
-                    linkId);
-            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-            return true;
-        }
-    }
-
-
-    private final class DownloadFilmFunc implements Function<Long, Boolean>{
-
-        @Override
-        public Boolean apply(@NonNull Long filmId) throws Exception {
-            downloadCenter.download(filmId);
-            return true;
-        }
-    }
-
-    private final class DownloadFilmByLinkFunc implements Function<Long, Boolean>{
-
-        private final Long linkId;
-
-        public DownloadFilmByLinkFunc(Long linkId) {
-            this.linkId = linkId;
-        }
-
-        @Override
-        public Boolean apply(@NonNull Long filmId) throws Exception {
-            downloadCenter.download(filmId, linkId);
-            return true;
-        }
-    }
-
-    private static final class DeleteFilmCacheFunc implements Function<Long, Long>{
-
-        @Override
-        public Long apply(@NonNull Long filmId) throws Exception {
-            FileUtils.delete(DownloadConstants.downloadMovieFilePath(filmId));
-            return filmId;
-        }
-    }
-
-    private final class UselessFilmFunc implements Function<Long, Long>{
-
-        @Override
-        public Long apply(@NonNull Long filmId) throws Exception {
-            String ori = "update %s set %s = '%d' where %s = '%d';";
+        //crawler info
+        Router.getService(InfoFinder.class, com.sloth.icrawler.Strategy._DEFAULT_INFO_FINDER).find(id, name, (id1, infoMap) -> {
+            String ori = "update %s set %s = '%s', %s = '%s', %s = '%s' where %s = '%d';";
             String sql = String.format(Locale.CHINA, ori,
                     FilmDao.TABLENAME,
-                    FilmDao.Properties.State.columnName,
-                    FilmState.WAIT,
-                    FilmDao.Properties.Id,
-                    filmId );
+                    FilmDao.Properties.Name.columnName,
+                    infoMap.get("name"),
+                    FilmDao.Properties.Img.columnName,
+                    infoMap.get("img"),
+                    FilmDao.Properties.Description.columnName,
+                    infoMap.get("intro"),
+                    FilmDao.Properties.Id.columnName,
+                    id);
             filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
-            return filmId;
-        }
+        });
+
+        //crawler link
+        crawlerBridge.crawler(id);
     }
 
-    private final class StopDownloadFilmFunc implements Function<Long, Boolean>{
-
-        @Override
-        public Boolean apply(@NonNull Long filmId) throws Exception {
-            downloadCenter.stopDownload(filmId);
-            return true;
-        }
+    @Override
+    public void searchFilmResources(long filmId) {
+        crawlerBridge.crawler(filmId);
     }
+
+    @Override
+    public void removeFilm(long id) {
+        String ori = "delete from %s where %s == %d;";
+        String sql = String.format(Locale.CHINA, ori,
+                FilmLinkDao.TABLENAME,
+                FilmLinkDao.Properties.FilmId.columnName,
+                id
+        );
+        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+
+        filmDataBaseConnection.getDaoSession().getFilmDao().deleteByKey(id);
+        FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
+    }
+
+    @Override
+    public void downloadFilm(long id) {
+        downloadCenter.download(id);
+    }
+
+    @Override
+    public void downloadFilmByLink(long filmId, long linkId) {
+        downloadCenter.download(filmId, linkId);
+    }
+
+    @Override
+    public void removeFilmCache(long id) {
+
+        FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
+        FileUtils.delete(DownloadConstants.getDownloadMovieFolder() + id);
+
+        String ori = "update %s set %s = '%d' where %s = '%d';";
+        String sql = String.format(Locale.CHINA, ori,
+                FilmDao.TABLENAME,
+                FilmDao.Properties.State.columnName,
+                FilmState.WAIT,
+                FilmDao.Properties.Id.columnName,
+                id );
+        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+
+        downloadCenter.stopDownload(id);
+
+    }
+
+    @Override
+    public void disableLink(long linkId) {
+        String ori = "update %s set %s = '%d' where %s = '%d';";
+        String sql = String.format(Locale.CHINA, ori,
+                FilmLinkDao.TABLENAME,
+                FilmLinkDao.Properties.State.columnName,
+                LinkState.USELESS,
+                FilmLinkDao.Properties.Id.columnName,
+                linkId);
+        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+    }
+
 }

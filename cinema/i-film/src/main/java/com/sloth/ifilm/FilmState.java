@@ -23,11 +23,11 @@ public @interface FilmState {
      * can't watch yet
      * searching for resources, try to download links
      */
-    int WAIT = 1;
+    int WAIT = 0;
 
     /**
      * has found link and download movie success
      */
-    int OK = 2;
+    int OK = 1;
 
 }

@@ -18,7 +18,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -55,7 +54,7 @@ public class DownloadCenter {
                 .subscribeOn(Schedulers.io())
                 .map(new QueryFilmFunc())
                 .map(new FilterLinkFunc(null))
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .subscribe(new DownloadObserver());
     }
 
@@ -64,7 +63,7 @@ public class DownloadCenter {
                 .subscribeOn(Schedulers.io())
                 .map(new QueryFilmFunc())
                 .map(new FilterLinkFunc(linkId))
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .subscribe(new DownloadObserver());
     }
 
@@ -74,7 +73,7 @@ public class DownloadCenter {
                 .map(new QueryFilmFunc())
                 .map(Film::getLinks)
                 .flatMap(new FlatLinkFunc())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .subscribe(new StopDownloadObserver());
     }
 
@@ -199,7 +198,7 @@ public class DownloadCenter {
             Observable.just(res)
                     .map(new UpdateCompleteFunc(filmId, linkId))
                     .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
+                    .observeOn(Schedulers.io())
                     .subscribe();
         }
     }
@@ -228,7 +227,7 @@ public class DownloadCenter {
                         FilmLinkDao.TABLENAME,
                         FilmLinkDao.Properties.State.columnName,
                         LinkState.USELESS,
-                        FilmLinkDao.Properties.Id,
+                        FilmLinkDao.Properties.Id.columnName,
                         linkId);
                 dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
             }
@@ -241,7 +240,7 @@ public class DownloadCenter {
                         FilmDao.TABLENAME,
                         FilmDao.Properties.State.columnName,
                         FilmState.OK,
-                        FilmDao.Properties.Id,
+                        FilmDao.Properties.Id.columnName,
                         filmId );
                 dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
             }

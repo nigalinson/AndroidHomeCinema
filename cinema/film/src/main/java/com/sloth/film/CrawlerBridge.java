@@ -22,7 +22,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -60,7 +59,7 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
                 .filter(films -> !films.isEmpty())
                 .flatMap(new FlatFilm())
                 .map(new CrawlerFunc())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .subscribe(new CrawlerObserver());
     }
 
@@ -81,7 +80,7 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
             }
             emitter.onNext(true);
             emitter.onComplete();
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe();
+        }).subscribeOn(Schedulers.io()).observeOn(Schedulers.io()).subscribe();
     }
 
     private CrawlerManager getCrawlerManager(){

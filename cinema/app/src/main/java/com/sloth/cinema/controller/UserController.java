@@ -1,5 +1,6 @@
 package com.sloth.cinema.controller;
 
+import com.yanzhenjie.andserver.annotation.GetMapping;
 import com.yanzhenjie.andserver.annotation.PostMapping;
 import com.yanzhenjie.andserver.annotation.RequestParam;
 import com.yanzhenjie.andserver.annotation.RestController;
@@ -26,5 +27,11 @@ public class UserController {
         } else {
             return "Login failed.";
         }
+    }
+
+    @GetMapping("/hello")
+    public String hello() throws InterruptedException {
+        Thread.sleep(10000);
+        return "hello";
     }
 }

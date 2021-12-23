@@ -31,7 +31,7 @@ public class FilmDataBaseConnection {
     public FilmDataBaseConnection(Context context) {
         File dir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
         FileUtils.createOrExistsDir(dir);
-        String filmDbPath = dir.getAbsolutePath() + "film-db";
+        String filmDbPath = dir.getAbsolutePath() + "/film-db";
         filmOrmUpgradeHelper = new FilmOrmUpgradeHelper(context, filmDbPath);
         Database db = filmOrmUpgradeHelper.getWritableDb();
         mDaoSession = new DaoMaster(db).newSession(IdentityScopeType.None);

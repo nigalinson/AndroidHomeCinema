@@ -1,7 +1,6 @@
 package com.sloth.ifilm;
 
 import java.util.List;
-import io.reactivex.Observable;
 
 /**
  * Author:    Carl
@@ -18,20 +17,20 @@ public interface FilmManager {
 
     void openEngine(boolean open);
 
-    Observable<List<Film>> getFilms(FilmQueryParam param);
+    List<Film> getFilms(FilmQueryParam param);
 
-    Observable<Boolean> addFilm(String name);
+    void addFilm(String name);
 
-    Observable<Boolean> searchFilmResources(long filmId);
+    void searchFilmResources(long filmId);
 
-    Observable<Boolean> removeFilm(long filmId);
+    void removeFilm(long filmId);
 
-    Observable<Boolean> downloadFilm(long filmId);
+    void downloadFilm(long filmId);
 
-    Observable<Boolean> downloadFilmByLink(long filmId, long linkId);
+    void downloadFilmByLink(long filmId, long linkId);
 
-    Observable<Boolean> removeFilmCache(long filmId);
+    void removeFilmCache(long filmId);
 
-    Observable<Boolean> disableLink(long linkId);
+    void disableLink(long linkId);
 
 }
