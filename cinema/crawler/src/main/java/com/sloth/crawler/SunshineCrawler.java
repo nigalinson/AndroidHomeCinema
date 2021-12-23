@@ -22,13 +22,14 @@ import cn.edu.hfut.dmic.webcollector.model.Page;
  * 2021/12/20         Carl            1.0                    1.0
  * Why & What is modified:
  */
-public class MovieParadiseCrawler extends BaseCrawler {
-    private static final String TAG = "MovieParadiseCrawler";
+public class SunshineCrawler extends BaseCrawler {
+    private static final String TAG = "SunshineCrawler";
 
     private static final String URL = "http://s.ygdy8.com";
 
-    public MovieParadiseCrawler(long id, String name, int concurrency) {
+    public SunshineCrawler(long id, String name, int concurrency) {
         super(id, name, concurrency);
+
         String formName = formedName(name);
         if(StringUtils.notEmpty(formName)){
             String url = URL + "/plus/so.php?typeid=1&keyword=" + formName;
@@ -44,7 +45,7 @@ public class MovieParadiseCrawler extends BaseCrawler {
     @Override
     public void visit(Page page, CrawlDatums next) {
         if(page.matchType("list")){
-            LogUtils.d(TAG, "open list page: " + page.html());
+            LogUtils.d(TAG, "list page: " + page.url());
             Elements linkElements = page.select(".co_content8").select("ul").select("a");
             for(Element element: linkElements){
                 String link = element.attr("href");
@@ -53,14 +54,14 @@ public class MovieParadiseCrawler extends BaseCrawler {
                 next.addAndReturn(URL + link).type("detail");
             }
         }else if(page.matchType("detail")){
-            LogUtils.d(TAG, "open detail page: " + page.html());
+            LogUtils.d(TAG, "detail page: " + page.url());
             Elements downloadLinkElements = page.select("#Zoom").select("a");
             for(Element element: downloadLinkElements){
                 String link = element.attr("href");
                 if("#".equals(link)){
                     link = element.text();
                 }
-                link = CrawlerUtils.parserUrl(link);
+                link = CrawlerUtils.parserDownloadUrl(link);
                 LogUtils.d(TAG, "find download url: " + link);
                 if(link != null){
                     notifyCrawlerResult(link);

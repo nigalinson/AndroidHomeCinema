@@ -7,6 +7,7 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.JoinProperty;
 import org.greenrobot.greendao.annotation.ToMany;
 import org.greenrobot.greendao.annotation.Unique;
+
 import java.util.List;
 
 /**
@@ -29,6 +30,10 @@ public class Film {
 
     private String name;
 
+    private String img;
+
+    private String description;
+
     @FilmState
     private Integer state;
 
@@ -47,10 +52,13 @@ public class Film {
     @Generated(hash = 684933320)
     private transient FilmDao myDao;
 
-    @Generated(hash = 1776094957)
-    public Film(Long id, String name, Integer state, Long createTime) {
+    @Generated(hash = 881360710)
+    public Film(Long id, String name, String img, String description, Integer state,
+            Long createTime) {
         this.id = id;
         this.name = name;
+        this.img = img;
+        this.description = description;
         this.state = state;
         this.createTime = createTime;
     }
@@ -73,6 +81,22 @@ public class Film {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getImg() {
+        return img;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Integer getState() {
@@ -165,4 +189,5 @@ public class Film {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getFilmDao() : null;
     }
+    
 }

@@ -1,28 +1,24 @@
 package com.sloth.film;
 
 import androidx.annotation.NonNull;
-
 import com.sankuai.waimai.router.annotation.RouterService;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
-import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
 import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmManager;
 import com.sloth.ifilm.FilmQueryParam;
 import com.sloth.ifilm.FilmState;
+import com.sloth.ifilm.LinkState;
 import com.sloth.ifilm.Strategy;
 import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
-
 import org.greenrobot.greendao.query.QueryBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -49,20 +45,17 @@ public class FilmManagerImpl implements FilmManager {
 
     public FilmManagerImpl() {
         filmDataBaseConnection = new FilmDataBaseConnection(Utils.getApp());
-        int policy = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_CACHE_POLICY, FilmConstants.DEF_FILM_CACHE_POLICY);
         int downloadConcurrency = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_DOWNLOAD_CONCURRENCY, FilmConstants.DEF_FILM_DOWNLOAD_CONCURRENCY);
-        downloadCenter = new DownloadCenter(filmDataBaseConnection).setPolicy(policy, downloadConcurrency);
+        downloadCenter = new DownloadCenter(filmDataBaseConnection).setPolicy(downloadConcurrency);
         crawlerBridge = new CrawlerBridge(filmDataBaseConnection);
     }
 
     @Override
     public void openEngine(boolean open) {
         if(open){
-            downloadCenter.reStartDownloading();
             crawlerBridge.start();
         }else{
             downloadCenter.stopDownloadAll();
-            downloadCenter.destroy();
             crawlerBridge.stop();
         }
     }
@@ -86,8 +79,10 @@ public class FilmManagerImpl implements FilmManager {
     }
 
     @Override
-    public Observable<Boolean> addFilm(Film film) {
+    public Observable<Boolean> addFilm(String name) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            Film film = new Film();
+            film.setName(name);
             film.setState(FilmState.WAIT);
             film.setLinks(new ArrayList<>());
             film.setCreateTime(System.currentTimeMillis());
@@ -98,10 +93,9 @@ public class FilmManagerImpl implements FilmManager {
     }
 
     @Override
-    public Observable<Boolean> editFilm(Film film) {
+    public Observable<Boolean> searchFilmResources(long filmId) {
         return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
-            film.setCreateTime(System.currentTimeMillis());
-            filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
+            crawlerBridge.crawler(filmId);
             emitter.onNext(true);
             emitter.onComplete();
         }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
@@ -126,24 +120,19 @@ public class FilmManagerImpl implements FilmManager {
     }
 
     @Override
-    public Observable<Boolean> removeFilm(Film film) {
-        return removeFilm(film.getId());
-    }
-
-    @Override
-    public Observable<Boolean> cacheFilm(long id) {
+    public Observable<Boolean> downloadFilm(long id) {
         return Observable.just(id)
-                .map(new QueryFilmByIdFunc())
                 .subscribeOn(Schedulers.io())
-                .map(new ReDownloadFilmFunc())
+                .map(new DownloadFilmFunc())
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
-    public Observable<Boolean> cacheFilm(Film film) {
-        return Observable.just(film)
-                .map(new ReDownloadFilmFunc())
+    public Observable<Boolean> downloadFilmByLink(long filmId, long linkId) {
+        return Observable.just(filmId)
+                .subscribeOn(Schedulers.io())
+                .map(new DownloadFilmByLinkFunc(linkId))
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -151,26 +140,19 @@ public class FilmManagerImpl implements FilmManager {
     @Override
     public Observable<Boolean> removeFilmCache(long id) {
         return Observable.just(id)
-                .map(new QueryFilmByIdFunc())
                 .subscribeOn(Schedulers.io())
-                .map(new CancelDownloadFilmFunc())
+                .map(new DeleteFilmCacheFunc())
+                .map(new UselessFilmFunc())
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .map(new StopDownloadFilmFunc())
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
-    public Observable<Boolean> removeFilmCache(Film film) {
-        return Observable.just(film)
-                .map(new CancelDownloadFilmFunc())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    public Observable<Boolean> setCachePolicy(int policy, int concurrency) {
+    public Observable<Boolean> disableLink(long linkId) {
         return Observable.just(true)
-                .map(new UpdatePolicyFunc(policy, concurrency))
-                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .map(new DisableFirstLinkFunc(linkId))
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
@@ -188,44 +170,84 @@ public class FilmManagerImpl implements FilmManager {
         }
     }
 
-    private final class ReDownloadFilmFunc implements Function<Film, Boolean>{
+    private final class DisableFirstLinkFunc implements Function<Boolean, Boolean>{
 
-        @Override
-        public Boolean apply(@NonNull Film film) throws Exception {
-            downloadCenter.reDownload(film);
-            return true;
-        }
-    }
+        private final Long linkId;
 
-    private final class CancelDownloadFilmFunc implements Function<Film, Boolean>{
-
-        @Override
-        public Boolean apply(@NonNull Film film) throws Exception {
-            downloadCenter.stopDownload(film);
-            return true;
-        }
-    }
-
-    private final class UpdatePolicyFunc implements Function<Boolean, Boolean>{
-
-        @FilmCachePolicy
-        private final int policy;
-
-        private final int concurrency;
-
-        public UpdatePolicyFunc(@FilmCachePolicy int policy, int concurrency) {
-            this.policy = policy;
-            this.concurrency = concurrency;
+        public DisableFirstLinkFunc(Long linkId) {
+            this.linkId = linkId;
         }
 
         @Override
-        public Boolean apply(@NonNull Boolean b) throws Exception {
-            SPUtils.getInstance().put(FilmConstants.SP.KEY_FILM_CACHE_POLICY, policy);
-            SPUtils.getInstance().put(FilmConstants.SP.KEY_FILM_DOWNLOAD_CONCURRENCY, concurrency);
-            downloadCenter.setPolicy(policy, concurrency);
+        public Boolean apply(@NonNull Boolean r) throws Exception {
+            String ori = "update %s set %s = '%d' where %s = '%d';";
+            String sql = String.format(Locale.CHINA, ori,
+                    FilmLinkDao.TABLENAME,
+                    FilmLinkDao.Properties.State.columnName,
+                    LinkState.USELESS,
+                    FilmLinkDao.Properties.Id,
+                    linkId);
+            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
             return true;
         }
     }
 
 
+    private final class DownloadFilmFunc implements Function<Long, Boolean>{
+
+        @Override
+        public Boolean apply(@NonNull Long filmId) throws Exception {
+            downloadCenter.download(filmId);
+            return true;
+        }
+    }
+
+    private final class DownloadFilmByLinkFunc implements Function<Long, Boolean>{
+
+        private final Long linkId;
+
+        public DownloadFilmByLinkFunc(Long linkId) {
+            this.linkId = linkId;
+        }
+
+        @Override
+        public Boolean apply(@NonNull Long filmId) throws Exception {
+            downloadCenter.download(filmId, linkId);
+            return true;
+        }
+    }
+
+    private static final class DeleteFilmCacheFunc implements Function<Long, Long>{
+
+        @Override
+        public Long apply(@NonNull Long filmId) throws Exception {
+            FileUtils.delete(DownloadConstants.downloadMovieFilePath(filmId));
+            return filmId;
+        }
+    }
+
+    private final class UselessFilmFunc implements Function<Long, Long>{
+
+        @Override
+        public Long apply(@NonNull Long filmId) throws Exception {
+            String ori = "update %s set %s = '%d' where %s = '%d';";
+            String sql = String.format(Locale.CHINA, ori,
+                    FilmDao.TABLENAME,
+                    FilmDao.Properties.State.columnName,
+                    FilmState.WAIT,
+                    FilmDao.Properties.Id,
+                    filmId );
+            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+            return filmId;
+        }
+    }
+
+    private final class StopDownloadFilmFunc implements Function<Long, Boolean>{
+
+        @Override
+        public Boolean apply(@NonNull Long filmId) throws Exception {
+            downloadCenter.stopDownload(filmId);
+            return true;
+        }
+    }
 }

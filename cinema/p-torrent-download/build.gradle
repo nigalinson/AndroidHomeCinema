@@ -49,7 +49,7 @@ dependencies {
     androidTestImplementation testDependencies.mockitoCore
 
     api project(':platform')
-    implementation "com.github.TorrentStream:TorrentStream-Android:2.8.0"
+    api "com.github.TorrentStream:TorrentStream-Android:2.8.0"
 
     annotationProcessor thirdDependencies.wmRouterAnno
 }

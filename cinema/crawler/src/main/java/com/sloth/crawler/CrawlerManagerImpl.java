@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 2021/12/20         Carl            1.0                    1.0
  * Why & What is modified:
  */
-@RouterService(interfaces = CrawlerManager.class, key = Strategy._DEFAULT, singleton = true, defaultImpl = true)
+@RouterService(interfaces = CrawlerManager.class, key = Strategy._DEFAULT_CRAWLER, singleton = true, defaultImpl = true)
 public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.CrawlerListener {
 
     private final AtomicInteger concurrency = new AtomicInteger();
@@ -37,7 +37,6 @@ public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.Crawle
         concurrency.set(crawlerConcurrency);
     }
 
-    @Override
     public void setPolicy(int concur){
         this.concurrency.set(concur);
         SPUtils.getInstance().put(CrawlerConstants.SP.KEY_FILM_CRAWLER_CONCURRENCY, concur);
@@ -50,14 +49,13 @@ public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.Crawle
         List<BaseCrawler> list = new ArrayList<>();
         crawlerMap.put(id, list);
 
-        BaseCrawler filmCrawler = new MovieParadiseCrawler(id, name, concurrency.get()).listener(this);
-        list.add(filmCrawler);
-        ExecutorUtils.getNormal().execute(new ExecutorUtils.WorkRunnable() {
-            @Override
-            public void run() {
-                filmCrawler.run();
-            }
-        });
+        crawler(list, new YinFansCrawler(id, name, concurrency.get()).listener(this));
+        crawler(list, new SunshineCrawler(id, name, concurrency.get()).listener(this));
+    }
+
+    private void crawler(List<BaseCrawler> list, BaseCrawler crawler) {
+        list.add(crawler);
+        ExecutorUtils.getNormal().execute(crawler::run);
     }
 
     @Override

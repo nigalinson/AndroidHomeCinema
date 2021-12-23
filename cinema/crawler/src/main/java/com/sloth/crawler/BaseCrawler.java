@@ -32,7 +32,7 @@ public abstract class BaseCrawler extends RamCrawler {
         this.id = id;
         this.name = name;
 //        getConf().setDefaultCookie(cookie);
-        getConf().setExecuteInterval(5000);
+        getConf().setExecuteInterval(10000);
         getConf().set("title_prefix","PREFIX_");
         getConf().set("content_length_limit", 200);
         setRequester(new OkHttpRequester() {

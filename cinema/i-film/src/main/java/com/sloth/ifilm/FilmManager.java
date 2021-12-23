@@ -20,22 +20,18 @@ public interface FilmManager {
 
     Observable<List<Film>> getFilms(FilmQueryParam param);
 
-    Observable<Boolean> addFilm(Film film);
+    Observable<Boolean> addFilm(String name);
 
-    Observable<Boolean> editFilm(Film film);
+    Observable<Boolean> searchFilmResources(long filmId);
 
-    Observable<Boolean> removeFilm(long id);
+    Observable<Boolean> removeFilm(long filmId);
 
-    Observable<Boolean> removeFilm(Film film);
+    Observable<Boolean> downloadFilm(long filmId);
 
-    Observable<Boolean> cacheFilm(long id);
+    Observable<Boolean> downloadFilmByLink(long filmId, long linkId);
 
-    Observable<Boolean> cacheFilm(Film film);
+    Observable<Boolean> removeFilmCache(long filmId);
 
-    Observable<Boolean> removeFilmCache(long id);
-
-    Observable<Boolean> removeFilmCache(Film film);
-
-    Observable<Boolean> setCachePolicy(@FilmCachePolicy int policy, int concurrency);
+    Observable<Boolean> disableLink(long linkId);
 
 }

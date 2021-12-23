@@ -19,7 +19,7 @@ android {
         multiDexEnabled true
 
         ndk {
-            abiFilters "armeabi"
+            abiFilters "armeabi", "armeabi-v7a", "arm64-v8a"
         }
 
     }

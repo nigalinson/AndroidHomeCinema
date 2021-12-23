@@ -1,11 +1,9 @@
 package com.sloth.film;
 
-import android.database.Cursor;
 import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.Router;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
-import com.sloth.ifilm.FilmCachePolicy;
 import com.sloth.ifilm.FilmDao;
 import com.sloth.ifilm.FilmLink;
 import com.sloth.ifilm.FilmLinkDao;
@@ -15,17 +13,10 @@ import com.sloth.pinsplatform.Strategies;
 import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
 import com.sloth.tools.util.LogUtils;
-import com.sloth.tools.util.StringUtils;
-
-import org.greenrobot.greendao.query.QueryBuilder;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -47,53 +38,44 @@ public class DownloadCenter {
 
     private static final String TAG = "DownloadCenter";
 
-    private final AtomicInteger policy = new AtomicInteger(-1);
     private final AtomicInteger concurrency = new AtomicInteger(-1);
     private final FilmDataBaseConnection dbConnection;
-    private Disposable loop;
 
     public DownloadCenter(FilmDataBaseConnection conn) {
         dbConnection = conn;
     }
 
-    public DownloadCenter setPolicy(@FilmCachePolicy int newPolicy, int newConcurrency){
-        policy.set(newPolicy);
+    public DownloadCenter setPolicy(int newConcurrency){
         concurrency.set(newConcurrency);
         return this;
     }
 
-    public void reStartDownloading(){
-        destroy();
-        Observable.interval(1000, 30 * 60 * 1000, TimeUnit.MILLISECONDS)
+    public void download(Long filmId){
+        Observable.just(filmId)
                 .subscribeOn(Schedulers.io())
-                .map(b -> concurrency.get())
                 .map(new QueryFilmFunc())
-                .filter(films -> !films.isEmpty())
-                .flatMap(new FlatFilm())
+                .map(new FilterLinkFunc(null))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DownloadObserver());
     }
 
-    public void reDownload(Film film){
-        FilmLink link = findFirstUsableLink(film);
-
-        if(link == null || StringUtils.isEmpty(link.getUrl())){
-            LogUtils.e(TAG, "find none usable download link !");
-            return;
-        }
-
-        Observable.just(film)
-                .subscribeOn(AndroidSchedulers.mainThread())
+    public void download(Long filmId, Long linkId){
+        Observable.just(filmId)
+                .subscribeOn(Schedulers.io())
+                .map(new QueryFilmFunc())
+                .map(new FilterLinkFunc(linkId))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DownloadObserver());
     }
 
-    public void stopDownload(Film film){
-        FilmLink link = findFirstUsableLink(film);
-        if(link != null && StringUtils.notEmpty(link.getUrl())
-                && getDownloadManager(link.getUrl()).isDownloading(link.getUrl())){
-            getDownloadManager(link.getUrl()).terminate(link.getUrl());
-        }
+    public void stopDownload(Long filmId){
+        Observable.just(filmId)
+                .subscribeOn(Schedulers.io())
+                .map(new QueryFilmFunc())
+                .map(Film::getLinks)
+                .flatMap(new FlatLinkFunc())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new StopDownloadObserver());
     }
 
     public void stopDownloadAll(){
@@ -102,79 +84,79 @@ public class DownloadCenter {
         getTorrentDownloadManager().terminateAll();
     }
 
-    public void destroy(){
-        if(loop != null && !loop.isDisposed()){
-            loop.dispose();
-            loop = null;
+    private final class QueryFilmFunc implements Function<Long, Film> {
+
+        @Override
+        public Film apply(@NonNull Long filmId) throws Exception {
+            List<Film> films = dbConnection.getDaoSession().getFilmDao().queryBuilder()
+                    .where(FilmDao.Properties.Id.eq(filmId)).list();
+            if(!films.isEmpty()){
+                return films.get(0);
+            }
+            throw new RuntimeException("find no film by id: " + filmId);
         }
     }
 
-    private final class QueryFilmFunc implements Function<Integer, List<Film>> {
+    private static final class FilterLinkFunc implements Function<Film, FilmLink> {
 
-        @Override
-        public List<Film> apply(@NonNull Integer free) throws Exception {
-            if(policy.get() == FilmCachePolicy.NEVER_DOWNLOAD || free <= 0){
-                return Collections.emptyList();
-            }
-            List<Film> result = new ArrayList<>();
-            Cursor filmCursor = buildFilmCursor();
+        private final Long preLink;
 
-            while(filmCursor.moveToNext()){
-                Long id = filmCursor.getLong(0);
-                String name = filmCursor.getString(1);
-                Integer state = filmCursor.getInt(2);
-                Long time = filmCursor.getLong(3);
-                QueryBuilder<FilmLink> queryBuilder = dbConnection.getDaoSession().getFilmLinkDao().queryBuilder();
-                queryBuilder.where(FilmLinkDao.Properties.FilmId.eq(id), FilmLinkDao.Properties.State.eq(LinkState.WAIT));
-                List<FilmLink> links = queryBuilder.list();
-                if(links.size() > 0){
-                    Film film = new Film(id, name, state, time);
-                    film.setLinks(links);
-                    result.add(film);
-                }
-                if(result.size() >= free){
-                    break;
-                }
-            }
-            filmCursor.close();
-            return result;
+        public FilterLinkFunc(Long preLink) {
+            this.preLink = preLink;
         }
 
-        private Cursor buildFilmCursor() {
-            String ori = "select * from %s where %s == %d;";
-            String sql = String.format(Locale.CHINA, ori,
-                    FilmDao.TABLENAME,
-                    FilmDao.Properties.State.columnName,
-                    FilmState.WAIT
-            );
-            return dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+        @Override
+        public FilmLink apply(@NonNull Film film) throws Exception {
+            FilmLink link = null;
+            if(preLink != null){
+                link = FilmUtils.findLink(film, preLink);
+            }else{
+                link = FilmUtils.findFirstUsableLink(film);
+            }
+
+            if(link != null){
+                return link;
+            }
+            throw new RuntimeException("found none link !");
         }
     }
 
-    private static final class FlatFilm implements Function<List<Film>, ObservableSource<Film>> {
+    private static final class FlatLinkFunc implements Function<List<FilmLink>, Observable<FilmLink>> {
 
         @Override
-        public ObservableSource<Film> apply(@NonNull List<Film> films) throws Exception {
-            return Observable.fromIterable(films);
+        public Observable<FilmLink> apply(@NonNull List<FilmLink> filmLinks) throws Exception {
+            return Observable.fromIterable(filmLinks);
         }
     }
 
-    private final class DownloadObserver implements Observer<Film> {
+    private final class DownloadObserver implements Observer<FilmLink> {
         @Override
-        public void onSubscribe(@NonNull Disposable d) {
-            loop = d;
-        }
+        public void onSubscribe(@NonNull Disposable d) { }
 
         @Override
-        public void onNext(@NonNull Film film) {
-            FilmLink link = findFirstUsableLink(film);
-            if(link == null){
-                throw new RuntimeException("found none link !");
-            }
+        public void onNext(@NonNull FilmLink link) {
             getDownloadManager(link.getUrl()).download(
                     link.getUrl(),
-                    DownloadConstants.downloadMovieFilePath(film.getId()),
-                    new DownloadCallback(film.getId(), link.getId()));
+                    DownloadConstants.downloadMovieFilePath(link.getFilmId()),
+                    new DownloadCallback(link.getFilmId(), link.getId()));
+        }
+
+        @Override
+        public void onError(@NonNull Throwable e) {
+            LogUtils.e(TAG, e.getMessage() != null ? e.getMessage() : "error" );
+        }
+
+        @Override
+        public void onComplete() { }
+    }
+
+    private final class StopDownloadObserver implements Observer<FilmLink> {
+        @Override
+        public void onSubscribe(@NonNull Disposable d) { }
+
+        @Override
+        public void onNext(@NonNull FilmLink link) {
+            getDownloadManager(link.getUrl()).terminate(link.getUrl());
         }
 
         @Override
@@ -267,7 +249,7 @@ public class DownloadCenter {
     }
 
     private DownloadManager getDownloadManager(String url){
-        if(url.startsWith("magnet:") || url.startsWith("MAGNET:")){
+        if(url.startsWith("magnet:") || url.startsWith("MAGNET:") || url.endsWith(".torrent") || url.endsWith(".TORRENT")){
             //磁力链接
             return getTorrentDownloadManager();
         }else if(url.startsWith("ftp") || url.startsWith("FTP")){
@@ -291,14 +273,4 @@ public class DownloadCenter {
         return Router.getService(DownloadManager.class, Strategies.DownloadEngine.LIU_LI_SHO);
     }
 
-    private static FilmLink findFirstUsableLink(Film film){
-        if(film.getLinks() != null && film.getLinks().size() > 0){
-            for(FilmLink link: film.getLinks()){
-                if(link.getState() == LinkState.WAIT){
-                    return link;
-                }
-            }
-        }
-        return null;
-    }
 }

@@ -13,8 +13,6 @@ package com.sloth.icrawler;
  */
 public interface CrawlerManager {
 
-    void setPolicy(int concur);
-
     void crawler(long id, String name, CrawlerListener crawlerListener);
 
     void clear();

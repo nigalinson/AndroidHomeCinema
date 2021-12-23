@@ -1,6 +1,7 @@
 package com.sloth.film;
 
 import androidx.annotation.NonNull;
+
 import com.sankuai.waimai.router.Router;
 import com.sloth.icrawler.CrawlerManager;
 import com.sloth.icrawler.Strategy;
@@ -11,10 +12,14 @@ import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmState;
 import com.sloth.ifilm.LinkState;
 import com.sloth.tools.util.LogUtils;
+
 import org.greenrobot.greendao.query.QueryBuilder;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -65,9 +70,23 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
         }
     }
 
+    public void crawler(long filmId){
+        Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            QueryBuilder<Film> queryBuilder = dbConnection.getDaoSession().getFilmDao().queryBuilder();
+            queryBuilder.where(FilmDao.Properties.Id.eq(filmId) ,FilmDao.Properties.State.eq(FilmState.WAIT));
+            List<Film> films = queryBuilder.list();
+            if(!films.isEmpty()){
+                Film film = films.get(0);
+                getCrawlerManager().crawler(film.getId(), film.getName(), CrawlerBridge.this);
+            }
+            emitter.onNext(true);
+            emitter.onComplete();
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe();
+    }
+
     private CrawlerManager getCrawlerManager(){
         if(crawlerManager == null){
-            crawlerManager = Router.getService(CrawlerManager.class, Strategy._DEFAULT);
+            crawlerManager = Router.getService(CrawlerManager.class, Strategy._DEFAULT_CRAWLER);
             assert crawlerManager != null;
         }
         return crawlerManager;
