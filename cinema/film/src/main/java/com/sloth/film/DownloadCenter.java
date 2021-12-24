@@ -1,5 +1,6 @@
 package com.sloth.film;
 
+import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.Router;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
@@ -12,9 +13,17 @@ import com.sloth.pinsplatform.Strategies;
 import com.sloth.pinsplatform.download.DownloadListener;
 import com.sloth.pinsplatform.download.DownloadManager;
 import com.sloth.tools.util.LogUtils;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Author:    Carl
@@ -31,8 +40,13 @@ public class DownloadCenter {
 
     private static final String TAG = "DownloadCenter";
 
+    private static final int RETRY_TIMES = 3;
+
     private final AtomicInteger concurrency = new AtomicInteger(-1);
     private final FilmDataBaseConnection dbConnection;
+
+    private Disposable autoDownloadLoop;
+    private final Set<Long> autoDownloadQueue = new HashSet<>();
 
     public DownloadCenter(FilmDataBaseConnection conn) {
         dbConnection = conn;
@@ -41,6 +55,10 @@ public class DownloadCenter {
     public DownloadCenter setPolicy(int newConcurrency){
         concurrency.set(newConcurrency);
         return this;
+    }
+
+    public boolean isDownloading(String url){
+        return getDownloadManager(url).isDownloading(url);
     }
 
     public void download(Long filmId){
@@ -54,7 +72,7 @@ public class DownloadCenter {
             return;
         }
 
-        downloadLink(filmLink);
+        downloadLink(filmLink, RETRY_TIMES);
     }
 
     public void download(Long filmId, Long linkId){
@@ -68,7 +86,21 @@ public class DownloadCenter {
             return;
         }
 
-        downloadLink(filmLink);
+        downloadLink(filmLink, RETRY_TIMES);
+    }
+
+    public void download(Long filmId, Long linkId, int retryTime){
+        Film film = queryFilm(filmId);
+        if(film == null){
+            return;
+        }
+        FilmLink filmLink = filterLink(film, linkId);
+
+        if(filmLink == null){
+            return;
+        }
+
+        downloadLink(filmLink, retryTime);
     }
 
     public void stopDownload(Long filmId){
@@ -88,7 +120,57 @@ public class DownloadCenter {
         }
     }
 
+    public void addAutoDownload(Long filmId){
+        autoDownloadQueue.add(filmId);
+        stopAutoDownload();
+        Observable.interval(60 * 1000, 30 * 60 * 1000, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(new Observer<Long>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        autoDownloadLoop = d;
+                    }
+
+                    @Override
+                    public void onNext(@NonNull Long aLong) {
+                        Iterator<Long> iterator = autoDownloadQueue.iterator();
+                        while(iterator.hasNext()){
+                            Film film = queryFilm(iterator.next());
+                            if(film == null){
+                                continue;
+                            }
+                            FilmLink filmLink = filterLink(film, null);
+
+                            if(filmLink == null){
+                                continue;
+                            }
+
+                            downloadLink(filmLink, RETRY_TIMES);
+                            iterator.remove();
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        LogUtils.e(TAG, e.getMessage() != null ? e.getMessage() : "auto download failed !");
+                    }
+
+                    @Override
+                    public void onComplete() { }
+                });
+
+    }
+
+    public void stopAutoDownload(){
+        if(autoDownloadLoop != null && !autoDownloadLoop.isDisposed()){
+            autoDownloadLoop.dispose();
+            autoDownloadLoop = null;
+        }
+    }
+
     public void stopDownloadAll(){
+        stopAutoDownload();
         getHttpDownloadManager().terminateAll();
         getFTPDownloadManager().terminateAll();
         getTorrentDownloadManager().terminateAll();
@@ -117,11 +199,11 @@ public class DownloadCenter {
         return null;
     }
 
-    private void downloadLink(FilmLink link){
+    private void downloadLink(FilmLink link, int retryTimes){
         getDownloadManager(link.getUrl()).download(
                 link.getUrl(),
                 DownloadConstants.downloadMovieFilePath(link.getFilmId()),
-                new DownloadCallback(link.getFilmId(), link.getId()));
+                new DownloadCallback(link.getFilmId(), link.getId(), retryTimes));
     }
 
     private void stopDownloadLink(FilmLink link){
@@ -132,12 +214,14 @@ public class DownloadCenter {
 
         private final long filmId;
         private final long linkId;
+        private final int retryTimes;
 
         private long lastProgressStamp = 0;
 
-        public DownloadCallback(long filmId, long linkId) {
+        public DownloadCallback(long filmId, long linkId, int retryTimes) {
             this.filmId = filmId;
             this.linkId = linkId;
+            this.retryTimes = retryTimes;
         }
 
         @Override
@@ -165,7 +249,12 @@ public class DownloadCenter {
         @Override
         public void onDownloadFailed(String errCode) {
             LogUtils.d(TAG, "onDownloadFailed: " + errCode);
-            onDownloadFinish(false);
+            if(retryTimes > 0){
+                LogUtils.d(TAG, "retry downloading !");
+                download(filmId, linkId, retryTimes - 1);
+            }else{
+                onDownloadFinish(false);
+            }
         }
 
         protected void onDownloadFinish(boolean res){

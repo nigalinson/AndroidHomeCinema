@@ -6,6 +6,7 @@ import com.sloth.functions.download.DownloadConstants;
 import com.sloth.icrawler.InfoFinder;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmDao;
+import com.sloth.ifilm.FilmLink;
 import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmManager;
 import com.sloth.ifilm.FilmQueryParam;
@@ -16,9 +17,7 @@ import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
-
 import org.greenrobot.greendao.query.QueryBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,11 +56,20 @@ public class FilmManagerImpl implements FilmManager {
         int start = param.getPageIndex() * param.getPageSize();
         int size = param.getPageSize();
         queryBuilder.offset(start).limit(size);
-        return queryBuilder.list();
+        List<Film> films = queryBuilder.list();
+        for(Film film: films){
+            List<FilmLink> links = film.getLinks();
+            if(links != null){
+                for(FilmLink link: links){
+                    film.setDownloading(downloadCenter.isDownloading(link.getUrl()));
+                }
+            }
+        }
+        return films;
     }
 
     @Override
-    public void addFilm(String name) {
+    public void addFilm(String name, boolean autoDownload) {
         Film film = new Film();
         film.setName(name);
         film.setState(FilmState.WAIT);
@@ -87,6 +95,10 @@ public class FilmManagerImpl implements FilmManager {
 
         //crawler link
         crawlerBridge.crawler(id);
+
+        if(autoDownload){
+            downloadCenter.addAutoDownload(id);
+        }
     }
 
     @Override

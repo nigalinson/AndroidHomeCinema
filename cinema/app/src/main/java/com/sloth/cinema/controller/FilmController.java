@@ -29,9 +29,9 @@ import java.util.List;
 public class FilmController {
 
     @GetMapping("/film/list")
-    String filmList(@RequestParam("pageIndex") String pageIndex,
-                    @RequestParam("pageSize") String pageSize,
-                    @RequestParam("name") String name) {
+    String filmList(@RequestParam(value = "pageIndex", required = false) String pageIndex,
+                    @RequestParam(value = "pageSize",required = false) String pageSize,
+                    @RequestParam(value = "name", required = false) String name) {
         List<Film> films = Router.getService(FilmManager.class, Strategy._DEFAULT).getFilms(
                 new FilmQueryParam.Builder()
                         .setPageIndex(pageIndex)
@@ -45,8 +45,9 @@ public class FilmController {
     }
 
     @PostMapping("/film/add")
-    String addFilm(@RequestParam("name") String name) {
-        Router.getService(FilmManager.class, Strategy._DEFAULT).addFilm(name);
+    String addFilm(@RequestParam(value = "name",required = false) String name,
+                   @RequestParam(value = "autoDownload", required = false) String autoDownload) {
+        Router.getService(FilmManager.class, Strategy._DEFAULT).addFilm(name, Boolean.parseBoolean(autoDownload));
         return Result.ok().json();
     }
 

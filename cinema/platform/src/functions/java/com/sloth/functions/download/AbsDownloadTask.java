@@ -89,9 +89,9 @@ public abstract class AbsDownloadTask<T> implements Runnable {
     }
 
     protected void notifyFailed(String err){
+        detach();
         if(downloadListener != null){
             downloadListener.onDownloadFailed(err);
         }
-        detach();
     }
 }

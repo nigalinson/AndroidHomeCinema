@@ -17,7 +17,7 @@ public interface FilmManager {
 
     List<Film> getFilms(FilmQueryParam param);
 
-    void addFilm(String name);
+    void addFilm(String name, boolean autoDownload);
 
     void searchFilmResources(long filmId);
 

@@ -6,6 +6,7 @@ import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.JoinProperty;
 import org.greenrobot.greendao.annotation.ToMany;
+import org.greenrobot.greendao.annotation.Transient;
 import org.greenrobot.greendao.annotation.Unique;
 
 import java.util.List;
@@ -36,6 +37,9 @@ public class Film {
 
     @FilmState
     private Integer state;
+
+    @Transient
+    private Boolean isDownloading;
 
     private Long createTime;
 
@@ -105,6 +109,14 @@ public class Film {
 
     public void setState(@FilmState Integer state) {
         this.state = state;
+    }
+
+    public Boolean getDownloading() {
+        return isDownloading;
+    }
+
+    public void setDownloading(Boolean downloading) {
+        isDownloading = downloading;
     }
 
     public Long getCreateTime() {
