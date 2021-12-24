@@ -6,7 +6,6 @@ import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import java.util.HashMap;
 import java.util.Map;
 import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
@@ -62,12 +61,13 @@ public class InfoCrawler extends RamCrawler {
         infos.put("name", name);
         infos.put("intro", "no message");
 
-        String formName = formedName(name);
-        if(StringUtils.notEmpty(formName)){
-            String url = URL + "/s?wd=" + formName;
+        String formNameInfo = formedName(name + " 百科");
+        if(StringUtils.notEmpty(formNameInfo)){
+            String url = URL + "/s?wd=" + formNameInfo;
             LogUtils.d(TAG, "add seeds: " + url);
             addSeedAndReturn(url).type("list");
         }
+
     }
 
     public InfoCrawler listener(InfoFinder.Listener listener) {
@@ -100,8 +100,6 @@ public class InfoCrawler extends RamCrawler {
             LogUtils.d(TAG, "list page: " + page.url());
             Element linkElement = page.select("#content_left").first().selectFirst("a");
             String link = linkElement.attr("href");
-            String name = linkElement.text();
-            infos.put("name", name);
             String content = linkElement.text();
             LogUtils.d(TAG, "find movie: " + content + "\n" + link);
             next.addAndReturn(link).type("detail");
@@ -111,6 +109,17 @@ public class InfoCrawler extends RamCrawler {
             String title = page.select("h1").first().text();
             infos.put("name", title);
 
+            Element introElement = page.select(".lemma-summary").first();
+            String intro = introElement.text();
+            infos.put("intro", intro);
+
+            String formNameImg = formedName(name + " 图片");
+            if(StringUtils.notEmpty(formNameImg)){
+                String url = URL + "/s?wd=" + formNameImg;
+                LogUtils.d(TAG, "add seeds: " + url);
+                next.addAndReturn(url).type("image");
+            }
+        }else if(page.matchType("image")){
             Elements imgElements = page.select("img");
             for(Element imgElement: imgElements){
                 String img = imgElement.attr("src");
@@ -120,10 +129,6 @@ public class InfoCrawler extends RamCrawler {
                 }
             }
 
-
-            Element introElement = page.select(".lemmaWgt-lemmaSummary").first();
-            String intro = introElement.text();
-            infos.put("intro", intro);
             notifyCrawlerResult();
         }
     }

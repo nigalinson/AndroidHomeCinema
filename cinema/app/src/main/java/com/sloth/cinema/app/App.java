@@ -13,6 +13,7 @@ import com.sankuai.waimai.router.components.DefaultLogger;
 import com.sankuai.waimai.router.components.DefaultOnCompleteListener;
 import com.sankuai.waimai.router.core.Debugger;
 import com.sloth.cinema.push.PushHelper;
+import com.sloth.cinema.utils.CrashHandler;
 import com.sloth.pinsplatform.log.Log;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.Utils;
@@ -50,6 +51,8 @@ public class App extends MultiDexApplication {
         initRouter(this);
 
         LogUtils.init(Router.getService(Log.class, Configs.LOG_ENGINE));
+
+        Thread.setDefaultUncaughtExceptionHandler(new CrashHandler());
 
         initPush();
 

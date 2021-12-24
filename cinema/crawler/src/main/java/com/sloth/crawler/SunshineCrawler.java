@@ -4,10 +4,8 @@ import com.sloth.crawler.utils.CrawlerUtils;
 import com.sloth.tools.util.EncodeUtils;
 import com.sloth.tools.util.LogUtils;
 import com.sloth.tools.util.StringUtils;
-
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
 import cn.edu.hfut.dmic.webcollector.model.Page;
 
@@ -64,7 +62,7 @@ public class SunshineCrawler extends BaseCrawler {
                 link = CrawlerUtils.parserDownloadUrl(link);
                 LogUtils.d(TAG, "find download url: " + link);
                 if(link != null){
-                    notifyCrawlerResult(link);
+                    notifyCrawlerResult(element.text(), link);
                 }
             }
         }

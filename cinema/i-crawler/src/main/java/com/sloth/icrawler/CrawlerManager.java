@@ -13,11 +13,11 @@ package com.sloth.icrawler;
  */
 public interface CrawlerManager {
 
-    void crawler(long id, String name, CrawlerListener crawlerListener);
+    void crawler(long filmId, String filmName, CrawlerListener crawlerListener);
 
     void clear();
 
     interface CrawlerListener{
-        void onCrawlerResult(long id, String name, String url);
+        void onCrawlerResult(long filmId, String filmName, String linkName, String linkUrl);
     }
 }

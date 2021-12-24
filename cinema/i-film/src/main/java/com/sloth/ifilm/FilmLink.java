@@ -25,15 +25,18 @@ public class FilmLink {
 
     private Long filmId;
 
+    private String name;
+
     @LinkState
     private int state;
 
     private String url;
 
-    @Generated(hash = 171660248)
-    public FilmLink(Long id, Long filmId, int state, String url) {
+    @Generated(hash = 1481125709)
+    public FilmLink(Long id, Long filmId, String name, int state, String url) {
         this.id = id;
         this.filmId = filmId;
+        this.name = name;
         this.state = state;
         this.url = url;
     }
@@ -56,6 +59,14 @@ public class FilmLink {
 
     public void setFilmId(Long filmId) {
         this.filmId = filmId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getState() {

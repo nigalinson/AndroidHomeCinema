@@ -229,7 +229,7 @@ public class DownloadCenter {
                         LinkState.USELESS,
                         FilmLinkDao.Properties.Id.columnName,
                         linkId);
-                dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+                dbConnection.getDaoSession().getDatabase().execSQL(sql);
             }
         }
 
@@ -242,7 +242,7 @@ public class DownloadCenter {
                         FilmState.OK,
                         FilmDao.Properties.Id.columnName,
                         filmId );
-                dbConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+                dbConnection.getDaoSession().getDatabase().execSQL(sql);
             }
         }
     }

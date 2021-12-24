@@ -57,7 +57,12 @@ public abstract class AbsDownloadTask<T> extends ExecutorUtils.WorkRunnable {
     @Override
     public void run() {
         notifyStart();
-        onDownloading(client = makeClient());
+        client = makeClient();
+        if(client != null){
+            onDownloading(client);
+        }else{
+            notifyFailed("download client connected failed !");
+        }
     }
 
     protected abstract T makeClient();

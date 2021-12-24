@@ -59,15 +59,10 @@ public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.Crawle
     }
 
     @Override
-    public void onCrawlerResult(long id, String name, String url) {
-        List<BaseCrawler> crawlers = crawlerMap.get(id);
-        if(crawlers == null){
-            return;
-        }
-
-        CrawlerListener listener = listenerMap.get(id);
+    public void onCrawlerResult(long filmId, String filmName, String linkName, String linkUrl) {
+        CrawlerListener listener = listenerMap.get(filmId);
         if(listener != null){
-            listener.onCrawlerResult(id, name, url);
+            listener.onCrawlerResult(filmId, filmName, linkName, linkUrl);
         }
     }
 
@@ -81,6 +76,8 @@ public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.Crawle
         }
 
         crawlerMap.clear();
+
+        listenerMap.clear();
     }
 
     private void stop(Long id){
@@ -98,6 +95,8 @@ public class CrawlerManagerImpl implements CrawlerManager, CrawlerManager.Crawle
             crawler.stop();
         }
         crawlers.clear();
+
+        listenerMap.remove(id);
     }
 
 }

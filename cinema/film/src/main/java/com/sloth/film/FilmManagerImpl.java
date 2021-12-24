@@ -12,13 +12,12 @@ import com.sloth.ifilm.FilmQueryParam;
 import com.sloth.ifilm.FilmState;
 import com.sloth.ifilm.LinkState;
 import com.sloth.ifilm.Strategy;
+import com.sloth.tools.util.EncodeUtils;
 import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
-
 import org.greenrobot.greendao.query.QueryBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +79,7 @@ public class FilmManagerImpl implements FilmManager {
         long id = filmDataBaseConnection.getDaoSession().getFilmDao().insertOrReplace(film);
 
         //crawler info
-        Router.getService(InfoFinder.class, com.sloth.icrawler.Strategy._DEFAULT_INFO_FINDER).find(id, name, (id1, infoMap) -> {
+        Router.getService(InfoFinder.class, com.sloth.icrawler.Strategy._DEFAULT_INFO_FINDER).find(id, name, (filmId, infoMap) -> {
             String ori = "update %s set %s = '%s', %s = '%s', %s = '%s' where %s = '%d';";
             String sql = String.format(Locale.CHINA, ori,
                     FilmDao.TABLENAME,
@@ -92,11 +91,18 @@ public class FilmManagerImpl implements FilmManager {
                     infoMap.get("intro"),
                     FilmDao.Properties.Id.columnName,
                     id);
-            filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+            filmDataBaseConnection.getDaoSession().getDatabase().execSQL(sql);
         });
 
         //crawler link
         crawlerBridge.crawler(id);
+    }
+
+    private String encodeIfNull(String origin) {
+        if(StringUtils.isEmpty(origin)){
+            return "";
+        }
+        return new String(EncodeUtils.base64Encode(origin));
     }
 
     @Override
@@ -112,7 +118,7 @@ public class FilmManagerImpl implements FilmManager {
                 FilmLinkDao.Properties.FilmId.columnName,
                 id
         );
-        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+        filmDataBaseConnection.getDaoSession().getDatabase().execSQL(sql);
 
         filmDataBaseConnection.getDaoSession().getFilmDao().deleteByKey(id);
         FileUtils.delete(DownloadConstants.downloadMovieFilePath(id));
@@ -141,7 +147,7 @@ public class FilmManagerImpl implements FilmManager {
                 FilmState.WAIT,
                 FilmDao.Properties.Id.columnName,
                 id );
-        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+        filmDataBaseConnection.getDaoSession().getDatabase().execSQL(sql);
 
         downloadCenter.stopDownload(id);
 
@@ -156,7 +162,7 @@ public class FilmManagerImpl implements FilmManager {
                 LinkState.USELESS,
                 FilmLinkDao.Properties.Id.columnName,
                 linkId);
-        filmDataBaseConnection.getDaoSession().getDatabase().rawQuery(sql, null);
+        filmDataBaseConnection.getDaoSession().getDatabase().execSQL(sql);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.sloth.film;
 
 import androidx.annotation.NonNull;
-
 import com.sankuai.waimai.router.Router;
 import com.sloth.icrawler.CrawlerManager;
 import com.sloth.icrawler.Strategy;
@@ -12,12 +11,9 @@ import com.sloth.ifilm.FilmLinkDao;
 import com.sloth.ifilm.FilmState;
 import com.sloth.ifilm.LinkState;
 import com.sloth.tools.util.LogUtils;
-
 import org.greenrobot.greendao.query.QueryBuilder;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
@@ -52,7 +48,7 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
 
     public void start(){
         stop();
-        Observable.interval(10 * 1000, 30 * 60 * 1000, TimeUnit.MILLISECONDS)
+        Observable.interval(10 * 1000, 60 * 60 * 1000, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .map(new ClearCrawlerFunc())
                 .map(new QueryFilmFunc())
@@ -128,16 +124,16 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
     }
 
     @Override
-    public void onCrawlerResult(long id, String name, String url) {
+    public void onCrawlerResult(long filmId, String filmName, String linkName, String linkUrl) {
         boolean exist = dbConnection.getDaoSession().getFilmLinkDao().queryBuilder()
-                .where(FilmLinkDao.Properties.FilmId.eq(id), FilmLinkDao.Properties.Url.eq(url))
+                .where(FilmLinkDao.Properties.FilmId.eq(filmId), FilmLinkDao.Properties.Url.eq(linkUrl))
                 .list().size() > 0;
         if(!exist){
-            dbConnection.getDaoSession().getFilmLinkDao().insert(new FilmLink(null, id, LinkState.WAIT, url));
+            dbConnection.getDaoSession().getFilmLinkDao().insert(new FilmLink(null, filmId, linkName, LinkState.WAIT, linkUrl));
         }
     }
 
-    private final class CrawlerObserver implements Observer<Boolean>{
+    private final class CrawlerObserver implements Observer<Boolean> {
 
         @Override
         public void onSubscribe(@NonNull Disposable d) {

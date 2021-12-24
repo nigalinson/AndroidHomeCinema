@@ -61,11 +61,12 @@ public abstract class BaseCrawler extends RamCrawler {
         return this;
     }
 
-    protected void notifyCrawlerResult(String url){
+    protected void notifyCrawlerResult(String linkName, String url){
         if(crawlerListener != null){
             crawlerListener.onCrawlerResult(
                     id,
                     name,
+                    linkName,
                     url
             );
         }

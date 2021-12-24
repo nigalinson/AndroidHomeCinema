@@ -21,13 +21,7 @@ public class InfoFinderImpl implements InfoFinder {
 
     @Override
     public void find(Long id, String name, Listener listener) {
-        ExecutorUtils.getIdle().execute(new ExecutorUtils.WorkRunnable() {
-            @Override
-            public void run() {
-                new InfoCrawler(id, name).listener((id1, infoMap) ->
-                        runOnUiThread(() -> listener.findInfo(id1, infoMap))).run();
-            }
-        });
+        ExecutorUtils.getNormal().execute(()-> new InfoCrawler(id, name).listener(listener).run());
     }
 
 }
