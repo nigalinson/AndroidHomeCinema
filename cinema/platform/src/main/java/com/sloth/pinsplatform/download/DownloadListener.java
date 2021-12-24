@@ -15,7 +15,7 @@ public interface DownloadListener {
 
     void onDownloadStart();
 
-    void onDownloadProgress(long current, long total);
+    void onDownloadProgress(float current, float total);
 
     void onDownloadComplete(String filePath);
 

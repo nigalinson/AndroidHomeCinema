@@ -27,6 +27,7 @@
             <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/push" />
             <option value="$PROJECT_DIR$/thunder" />
+            <option value="$PROJECT_DIR$/torrent" />
             <option value="$PROJECT_DIR$/udp" />
           </set>
         </option>

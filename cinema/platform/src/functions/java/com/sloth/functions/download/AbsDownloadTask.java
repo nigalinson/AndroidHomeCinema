@@ -75,7 +75,7 @@ public abstract class AbsDownloadTask<T> implements Runnable {
         }
     }
 
-    protected void notifyProgress(long cur, long total){
+    protected void notifyProgress(float cur, float total){
         if(downloadListener != null){
             downloadListener.onDownloadProgress(cur, total);
         }

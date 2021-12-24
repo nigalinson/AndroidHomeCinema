@@ -133,6 +133,8 @@ public class DownloadCenter {
         private final long filmId;
         private final long linkId;
 
+        private long lastProgressStamp = 0;
+
         public DownloadCallback(long filmId, long linkId) {
             this.filmId = filmId;
             this.linkId = linkId;
@@ -144,8 +146,13 @@ public class DownloadCenter {
         }
 
         @Override
-        public void onDownloadProgress(long current, long total) {
-            LogUtils.d(TAG, "onDownloadProgress: " + current + "/" + total);
+        public void onDownloadProgress(float current, float total) {
+            //dump too much progress will block logcat
+            long now = System.currentTimeMillis();
+            if(now - lastProgressStamp > 1000){
+                LogUtils.d(TAG, String.format(Locale.CHINA, "onDownloadProgress: %.4f / %.2f", current, total));
+                lastProgressStamp = now;
+            }
         }
 
         @Override

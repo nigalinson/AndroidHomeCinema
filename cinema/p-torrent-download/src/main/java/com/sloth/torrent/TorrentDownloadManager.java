@@ -97,7 +97,7 @@ public class TorrentDownloadManager extends AbsDownloadManager<TorrentStream> {
 
             @Override
             public void onStreamProgress(Torrent torrent, StreamStatus status) {
-                notifyProgress((long)status.progress, 100);
+                notifyProgress(status.progress, 100f);
             }
 
             @Override

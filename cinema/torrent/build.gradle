@@ -1,0 +1,75 @@
+/*
+ * Copyright (C) 2015-2018 Sébastiaan (github.com/se-bastiaan)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'de.undercouch.download'
+
+group='com.github.TorrentStream'
+
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 29
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    lintOptions {
+        abortOnError true
+    }
+}
+
+ext {
+    libtorrentVersion = '1.2.14.1'
+}
+
+//// Custom task which downloads the appropriate version of JAR files for jlibtorrent
+//task downloadDependencies(type: Download) {
+//    def baseUrl = "https://github.com/frostwire/frostwire-jlibtorrent" +
+//            "/releases/download/release%2F$libtorrentVersion"
+//
+//    def platforms = ['arm', 'arm64']
+//    def urls = platforms.collect { "$baseUrl/jlibtorrent-android-$it-${libtorrentVersion}.jar" }
+//    urls.add("$baseUrl/jlibtorrent-${libtorrentVersion}.jar")
+//
+//    src urls
+//    dest 'libs'
+//    overwrite false
+//}
+
+// Add our custom task as a dependency to the build
+// You may need to run gradle sync for IDE warnings to disappear
+//preBuild.dependsOn(downloadDependencies)
+
+//// Add deletion of libs folder to clean task
+//clean {
+//    delete 'libs'
+//}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    implementation files('libs/jlibtorrent-android-arm64-1.2.14.1.jar')
+    implementation files('libs/jlibtorrent-android-arm-1.2.14.1.jar')
+    implementation files('libs/jlibtorrent-1.2.14.1.jar')
+}
