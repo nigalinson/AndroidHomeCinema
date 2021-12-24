@@ -46,9 +46,9 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
         this.dbConnection = filmDataBaseConnection;
     }
 
-    public void start(){
-        stop();
-        Observable.interval(10 * 1000, 60 * 60 * 1000, TimeUnit.MILLISECONDS)
+    public void crawlerAll(){
+        stopCrawlerAll();
+        Observable.timer(2 * 1000,  TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .map(new ClearCrawlerFunc())
                 .map(new QueryFilmFunc())
@@ -59,7 +59,7 @@ public class CrawlerBridge implements CrawlerManager.CrawlerListener {
                 .subscribe(new CrawlerObserver());
     }
 
-    public void stop(){
+    public void stopCrawlerAll(){
         if(loop != null && !loop.isDisposed()){
             loop.dispose();
         }

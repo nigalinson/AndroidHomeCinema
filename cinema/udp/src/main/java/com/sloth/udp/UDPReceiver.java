@@ -59,14 +59,14 @@ public class UDPReceiver implements UDPReceiverCallback {
                 mCallback.receive((String) msg.obj);
             }
         }
-    };
+    }
 
     private MulticastSocket multicastSocket;
     private InetAddress group;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final ReceiverHandler receiverHaler = new ReceiverHandler(Looper.myLooper());
+    private ReceiverHandler receiverHaler;
 
     private UDPReceiverCallback callback;
 
@@ -74,8 +74,8 @@ public class UDPReceiver implements UDPReceiverCallback {
 
     private final AtomicBoolean netAvailable = new AtomicBoolean(true);
 
-    public UDPReceiver() {
-        receiverHaler.setCallback(this);
+    public UDPReceiver(Looper looper) {
+        receiverHaler = new ReceiverHandler(looper);
     }
 
     public void receive(UDPReceiverCallback callback){

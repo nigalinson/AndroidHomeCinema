@@ -56,6 +56,12 @@ public class FilmController {
         return Result.ok().json();
     }
 
+    @PutMapping("/film/crawlerAll")
+    String searchAllFilm() {
+        Router.getService(FilmManager.class, Strategy._DEFAULT).searchAllFilmResources();
+        return Result.ok().json();
+    }
+
     @DeleteMapping("/film/delete")
     String deleteFilm(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).removeFilm(Long.parseLong(id));
@@ -83,6 +89,12 @@ public class FilmController {
     @DeleteMapping("/film/disableLink")
     String disableLink(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).disableLink(Long.parseLong(id));
+        return Result.ok().json();
+    }
+
+    @PutMapping("/film/stopAll")
+    String stopAll() {
+        Router.getService(FilmManager.class, Strategy._DEFAULT).stopAll();
         return Result.ok().json();
     }
 

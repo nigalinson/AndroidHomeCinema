@@ -2,6 +2,8 @@ package com.sloth.udp;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
+import android.os.Looper;
+
 import com.sloth.tools.util.NetworkUtils;
 
 /**
@@ -26,10 +28,10 @@ public class UDPManager implements NetworkUtils.OnNetworkStatusChangedListener {
 
     private WifiManager.MulticastLock lock;
 
-    public UDPManager(Context context){
+    public UDPManager(Context context, Looper looper){
         NetworkUtils.registerNetworkStatusChangedListener(this);
-        UDPReceiver = new UDPReceiver();
-        UDPSender = new UDPSender();
+        UDPReceiver = new UDPReceiver(looper);
+        UDPSender = new UDPSender(looper);
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         lock = wifiMgr.createMulticastLock(UDPManager.class.getSimpleName());
         lock.setReferenceCounted(false);

@@ -113,27 +113,21 @@ public class WebService extends Service {
         LogUtils.d(TAG, msg);
         notifyCallbacks(msg);
 
-        arp = new ARP();
-        arp.startARP();
+        arp = ARP.start();
 
         registerPush();
 
         filmManager = Router.getService(FilmManager.class, Strategy._DEFAULT);
-        filmManager.openEngine(true);
     }
 
     private void stopServer(){
         if(filmManager != null){
-            filmManager.openEngine(false);
             filmManager = null;
         }
 
         unregisterPush();
 
-        if(arp != null){
-            arp.stopARP();
-            arp = null;
-        }
+        ARP.stop(arp);
 
         if(server != null){
             server.shutdown();

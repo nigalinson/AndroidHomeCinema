@@ -1,6 +1,9 @@
 package com.sloth.udp;
 
+import android.os.Looper;
+
 import com.sloth.tools.util.LogUtils;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -41,7 +44,7 @@ public class UDPSender {
 
     private final AtomicBoolean netAvailable = new AtomicBoolean(true);
 
-    public UDPSender() { }
+    public UDPSender(Looper looper) { }
 
     public void loop(){
         executor.execute(() -> {

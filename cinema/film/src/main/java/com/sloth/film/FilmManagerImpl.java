@@ -12,12 +12,13 @@ import com.sloth.ifilm.FilmQueryParam;
 import com.sloth.ifilm.FilmState;
 import com.sloth.ifilm.LinkState;
 import com.sloth.ifilm.Strategy;
-import com.sloth.tools.util.EncodeUtils;
 import com.sloth.tools.util.FileUtils;
 import com.sloth.tools.util.SPUtils;
 import com.sloth.tools.util.StringUtils;
 import com.sloth.tools.util.Utils;
+
 import org.greenrobot.greendao.query.QueryBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -45,16 +46,6 @@ public class FilmManagerImpl implements FilmManager {
         int downloadConcurrency = SPUtils.getInstance().getInt(FilmConstants.SP.KEY_FILM_DOWNLOAD_CONCURRENCY, FilmConstants.DEF_FILM_DOWNLOAD_CONCURRENCY);
         downloadCenter = new DownloadCenter(filmDataBaseConnection).setPolicy(downloadConcurrency);
         crawlerBridge = new CrawlerBridge(filmDataBaseConnection);
-    }
-
-    @Override
-    public void openEngine(boolean open) {
-        if(open){
-            crawlerBridge.start();
-        }else{
-            downloadCenter.stopDownloadAll();
-            crawlerBridge.stop();
-        }
     }
 
     @Override
@@ -98,16 +89,14 @@ public class FilmManagerImpl implements FilmManager {
         crawlerBridge.crawler(id);
     }
 
-    private String encodeIfNull(String origin) {
-        if(StringUtils.isEmpty(origin)){
-            return "";
-        }
-        return new String(EncodeUtils.base64Encode(origin));
-    }
-
     @Override
     public void searchFilmResources(long filmId) {
         crawlerBridge.crawler(filmId);
+    }
+
+    @Override
+    public void searchAllFilmResources() {
+        crawlerBridge.crawlerAll();
     }
 
     @Override
@@ -165,4 +154,9 @@ public class FilmManagerImpl implements FilmManager {
         filmDataBaseConnection.getDaoSession().getDatabase().execSQL(sql);
     }
 
+    @Override
+    public void stopAll() {
+        downloadCenter.stopDownloadAll();
+        crawlerBridge.stopCrawlerAll();
+    }
 }

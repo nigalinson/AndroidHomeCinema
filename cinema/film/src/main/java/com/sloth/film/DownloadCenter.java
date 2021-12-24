@@ -1,6 +1,5 @@
 package com.sloth.film;
 
-import androidx.annotation.NonNull;
 import com.sankuai.waimai.router.Router;
 import com.sloth.functions.download.DownloadConstants;
 import com.sloth.ifilm.Film;
@@ -16,11 +15,6 @@ import com.sloth.tools.util.LogUtils;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 
 /**
  * Author:    Carl
@@ -50,31 +44,48 @@ public class DownloadCenter {
     }
 
     public void download(Long filmId){
-        Observable.just(filmId)
-                .subscribeOn(Schedulers.io())
-                .map(new QueryFilmFunc())
-                .map(new FilterLinkFunc(null))
-                .observeOn(Schedulers.io())
-                .subscribe(new DownloadObserver());
+        Film film = queryFilm(filmId);
+        if(film == null){
+            return;
+        }
+        FilmLink filmLink = filterLink(film, null);
+
+        if(filmLink == null){
+            return;
+        }
+
+        downloadLink(filmLink);
     }
 
     public void download(Long filmId, Long linkId){
-        Observable.just(filmId)
-                .subscribeOn(Schedulers.io())
-                .map(new QueryFilmFunc())
-                .map(new FilterLinkFunc(linkId))
-                .observeOn(Schedulers.io())
-                .subscribe(new DownloadObserver());
+        Film film = queryFilm(filmId);
+        if(film == null){
+            return;
+        }
+        FilmLink filmLink = filterLink(film, linkId);
+
+        if(filmLink == null){
+            return;
+        }
+
+        downloadLink(filmLink);
     }
 
     public void stopDownload(Long filmId){
-        Observable.just(filmId)
-                .subscribeOn(Schedulers.io())
-                .map(new QueryFilmFunc())
-                .map(Film::getLinks)
-                .flatMap(new FlatLinkFunc())
-                .observeOn(Schedulers.io())
-                .subscribe(new StopDownloadObserver());
+        Film film = queryFilm(filmId);
+        if(film == null){
+            return;
+        }
+
+        List<FilmLink> filmLinks = film.getLinks();
+
+        if(filmLinks == null){
+            return;
+        }
+
+        for(FilmLink link: filmLinks){
+            stopDownloadLink(link);
+        }
     }
 
     public void stopDownloadAll(){
@@ -83,88 +94,38 @@ public class DownloadCenter {
         getTorrentDownloadManager().terminateAll();
     }
 
-    private final class QueryFilmFunc implements Function<Long, Film> {
-
-        @Override
-        public Film apply(@NonNull Long filmId) throws Exception {
-            List<Film> films = dbConnection.getDaoSession().getFilmDao().queryBuilder()
-                    .where(FilmDao.Properties.Id.eq(filmId)).list();
-            if(!films.isEmpty()){
-                return films.get(0);
-            }
-            throw new RuntimeException("find no film by id: " + filmId);
+    private Film queryFilm(Long filmId){
+        List<Film> films = dbConnection.getDaoSession().getFilmDao().queryBuilder()
+                .where(FilmDao.Properties.Id.eq(filmId)).list();
+        if(!films.isEmpty()){
+            return films.get(0);
         }
+        return null;
     }
 
-    private static final class FilterLinkFunc implements Function<Film, FilmLink> {
-
-        private final Long preLink;
-
-        public FilterLinkFunc(Long preLink) {
-            this.preLink = preLink;
+    private FilmLink filterLink(Film film, Long preLink){
+        FilmLink link = null;
+        if(preLink != null){
+            link = FilmUtils.findLink(film, preLink);
+        }else{
+            link = FilmUtils.findFirstUsableLink(film);
         }
 
-        @Override
-        public FilmLink apply(@NonNull Film film) throws Exception {
-            FilmLink link = null;
-            if(preLink != null){
-                link = FilmUtils.findLink(film, preLink);
-            }else{
-                link = FilmUtils.findFirstUsableLink(film);
-            }
-
-            if(link != null){
-                return link;
-            }
-            throw new RuntimeException("found none link !");
+        if(link != null){
+            return link;
         }
+        return null;
     }
 
-    private static final class FlatLinkFunc implements Function<List<FilmLink>, Observable<FilmLink>> {
-
-        @Override
-        public Observable<FilmLink> apply(@NonNull List<FilmLink> filmLinks) throws Exception {
-            return Observable.fromIterable(filmLinks);
-        }
+    private void downloadLink(FilmLink link){
+        getDownloadManager(link.getUrl()).download(
+                link.getUrl(),
+                DownloadConstants.downloadMovieFilePath(link.getFilmId()),
+                new DownloadCallback(link.getFilmId(), link.getId()));
     }
 
-    private final class DownloadObserver implements Observer<FilmLink> {
-        @Override
-        public void onSubscribe(@NonNull Disposable d) { }
-
-        @Override
-        public void onNext(@NonNull FilmLink link) {
-            getDownloadManager(link.getUrl()).download(
-                    link.getUrl(),
-                    DownloadConstants.downloadMovieFilePath(link.getFilmId()),
-                    new DownloadCallback(link.getFilmId(), link.getId()));
-        }
-
-        @Override
-        public void onError(@NonNull Throwable e) {
-            LogUtils.e(TAG, e.getMessage() != null ? e.getMessage() : "error" );
-        }
-
-        @Override
-        public void onComplete() { }
-    }
-
-    private final class StopDownloadObserver implements Observer<FilmLink> {
-        @Override
-        public void onSubscribe(@NonNull Disposable d) { }
-
-        @Override
-        public void onNext(@NonNull FilmLink link) {
-            getDownloadManager(link.getUrl()).terminate(link.getUrl());
-        }
-
-        @Override
-        public void onError(@NonNull Throwable e) {
-            LogUtils.e(TAG, e.getMessage() != null ? e.getMessage() : "error" );
-        }
-
-        @Override
-        public void onComplete() { }
+    private void stopDownloadLink(FilmLink link){
+        getDownloadManager(link.getUrl()).terminate(link.getUrl());
     }
 
     private class DownloadCallback implements DownloadListener{
@@ -178,46 +139,32 @@ public class DownloadCenter {
         }
 
         @Override
-        public void onDownloadStart() { }
+        public void onDownloadStart() {
+            LogUtils.d(TAG, "onDownloadStart");
+        }
 
         @Override
-        public void onDownloadProgress(long current, long total) { }
+        public void onDownloadProgress(long current, long total) {
+            LogUtils.d(TAG, "onDownloadProgress: " + current + "/" + total);
+        }
 
         @Override
         public void onDownloadComplete(String filePath) {
+            LogUtils.d(TAG, "onDownloadComplete: " + filePath);
             onDownloadFinish(true);
         }
 
 
         @Override
         public void onDownloadFailed(String errCode) {
+            LogUtils.d(TAG, "onDownloadFailed: " + errCode);
             onDownloadFinish(false);
         }
 
         protected void onDownloadFinish(boolean res){
-            Observable.just(res)
-                    .map(new UpdateCompleteFunc(filmId, linkId))
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.io())
-                    .subscribe();
-        }
-    }
-
-    private final class UpdateCompleteFunc implements Function<Boolean, Boolean>{
-
-        private final long filmId;
-        private final long linkId;
-
-        public UpdateCompleteFunc(long filmId, long linkId) {
-            this.filmId = filmId;
-            this.linkId = linkId;
-        }
-
-        @Override
-        public Boolean apply(@NonNull Boolean sus) throws Exception {
-            editLinkState(sus);
-            editFilmState(sus);
-            return true;
+            LogUtils.d(TAG, "onDownloadFinish: " + res);
+            editLinkState(res);
+            editFilmState(res);
         }
 
         private void editLinkState(Boolean sus) {

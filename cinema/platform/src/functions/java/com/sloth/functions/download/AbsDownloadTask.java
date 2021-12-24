@@ -1,7 +1,7 @@
 package com.sloth.functions.download;
 
 import com.sloth.pinsplatform.download.DownloadListener;
-import com.sloth.tools.util.ExecutorUtils;
+
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 2021/12/21         Carl            1.0                    1.0
  * Why & What is modified:
  */
-public abstract class AbsDownloadTask<T> extends ExecutorUtils.WorkRunnable {
+public abstract class AbsDownloadTask<T> implements Runnable {
     protected Map<String, AbsDownloadTask<T>> downloadTasks;
     protected final String urlLink;
     protected final String filePath;
@@ -70,11 +70,9 @@ public abstract class AbsDownloadTask<T> extends ExecutorUtils.WorkRunnable {
     protected abstract void onDownloading(T client);
 
     protected void notifyStart(){
-        runOnUiThread(()->{
-            if(downloadListener != null){
-                downloadListener.onDownloadStart();
-            }
-        });
+        if(downloadListener != null){
+            downloadListener.onDownloadStart();
+        }
     }
 
     protected void notifyProgress(long cur, long total){
@@ -84,20 +82,16 @@ public abstract class AbsDownloadTask<T> extends ExecutorUtils.WorkRunnable {
     }
 
     protected void notifyComplete(String filePath){
-        runOnUiThread(()->{
-            if(downloadListener != null){
-                downloadListener.onDownloadComplete(filePath);
-            }
-        });
+        if(downloadListener != null){
+            downloadListener.onDownloadComplete(filePath);
+        }
         detach();
     }
 
     protected void notifyFailed(String err){
-        runOnUiThread(()->{
-            if(downloadListener != null){
-                downloadListener.onDownloadFailed(err);
-            }
-        });
+        if(downloadListener != null){
+            downloadListener.onDownloadFailed(err);
+        }
         detach();
     }
 }

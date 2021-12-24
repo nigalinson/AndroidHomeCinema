@@ -9,12 +9,10 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import com.sloth.cinema.IWebServiceCallbackInterface;
 import com.sloth.cinema.IWebServiceInterface;
 import com.sloth.cinema.R;

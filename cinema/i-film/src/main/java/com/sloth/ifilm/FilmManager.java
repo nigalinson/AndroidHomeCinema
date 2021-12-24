@@ -15,13 +15,13 @@ import java.util.List;
  */
 public interface FilmManager {
 
-    void openEngine(boolean open);
-
     List<Film> getFilms(FilmQueryParam param);
 
     void addFilm(String name);
 
     void searchFilmResources(long filmId);
+
+    void searchAllFilmResources();
 
     void removeFilm(long filmId);
 
@@ -32,5 +32,7 @@ public interface FilmManager {
     void removeFilmCache(long filmId);
 
     void disableLink(long linkId);
+
+    void stopAll();
 
 }
