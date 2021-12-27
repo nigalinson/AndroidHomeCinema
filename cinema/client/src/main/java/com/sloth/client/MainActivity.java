@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.sloth.player.ExoPlayer;
+import com.sloth.tools.util.ByteDanceDpiUtils;
 import com.sloth.tools.util.LogUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,13 +17,12 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PEM_CODE = 999;
 
-    private ExoPlayer exoPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ByteDanceDpiUtils.setCustomDensity(getResources());
         setContentView(R.layout.activity_main);
-        exoPlayer = findViewById(R.id.player);
         ifPermissionOk();
     }
 
@@ -62,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
         LogUtils.d(TAG, "permission ok !");
 
         play();
-        exoPlayer.initStructures();
     }
 
     private void play() {
-        exoPlayer.play(null, "http://10.1.106.107:8888/nana.mp4");
+
+
     }
 
 }

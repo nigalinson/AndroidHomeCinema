@@ -7,9 +7,30 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.sloth.player.ExoPlayer
-        android:id="@+id/player"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+    <org.evilbinary.tv.widget.RoundedFrameLayout
+        android:id="@+id/view"
+        android:layout_width="270dp"
+        android:layout_height="406dp"
+        android:layout_margin="5dp"
+        android:focusable="true"
+        app:radius="4dp"
+        >
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/film_bg"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/border_down_shape"
+            android:gravity="center"
+            android:padding="15px"
+            android:text="我的电影"
+            android:textColor="@color/white"
+            android:textSize="24dp" />
+    </org.evilbinary.tv.widget.RoundedFrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

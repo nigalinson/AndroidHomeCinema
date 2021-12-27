@@ -1,26 +1,19 @@
 plugins {
-    id 'com.android.application'
-    id 'WMRouter'
+    id 'com.android.library'
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+    compileSdkVersion Integer.parseInt(COMPILE_SDK_VERSION)
+    buildToolsVersion BUILD_TOOLS_VERSION
 
     defaultConfig {
-        applicationId "com.sloth.cinema"
-        minSdkVersion 19
-        targetSdkVersion 30
+        minSdkVersion Integer.parseInt(MIN_SDK_VERSION)
+        targetSdkVersion Integer.parseInt(TARGET_SDK_VERSION)
         versionCode 1
-        versionName "1.0"
+        versionName '0.0.1'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        multiDexEnabled true
-
-        ndk {
-            abiFilters "armeabi", "armeabi-v7a", "arm64-v8a"
-        }
-
+        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
@@ -49,18 +42,18 @@ dependencies {
 
     testImplementation testDependencies.junit
     testImplementation testDependencies.mockito
+    testImplementation testDependencies.robolectric
     androidTestImplementation testDependencies.runner
     androidTestImplementation testDependencies.espresso
     androidTestImplementation testDependencies.mockitoCore
 
-    implementation supportDependencies.appCompat
-    implementation supportDependencies.constraintlayout
+    api supportDependencies.cardView
 
     api project(':platform')
-    api project(':tv-widgets')
+    api project(':p-player')
 
     annotationProcessor thirdDependencies.wmRouterAnno
+
+    api thirdDependencies.exoplayer
 }
-repositories {
-    mavenCentral()
-}
+
