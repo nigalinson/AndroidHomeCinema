@@ -13,17 +13,17 @@ import com.sloth.tools.util.GsonUtils;
  * 2021/12/23         Carl            1.0                    1.0
  * Why & What is modified:
  */
-public class Result <T> {
+public class HttpResult<T> {
 
     private boolean success;
 
     private T data;
 
-    public Result(boolean success) {
+    public HttpResult(boolean success) {
         this.success = success;
     }
 
-    public Result(boolean success, T data) {
+    public HttpResult(boolean success, T data) {
         this.success = success;
         this.data = data;
     }
@@ -48,20 +48,20 @@ public class Result <T> {
         return GsonUtils.toJson(this);
     }
 
-    public static Result<String> ok(){
-        return new Result<>(true, "ok");
+    public static HttpResult<String> ok(){
+        return new HttpResult<>(true, "ok");
     }
 
-    public static <M> Result<M> ok(M data){
-        return new Result<M>(true, data);
+    public static <M> HttpResult<M> ok(M data){
+        return new HttpResult<M>(true, data);
     }
 
-    public static Result<String> fail(){
-        return new Result<>(false, "err");
+    public static HttpResult<String> fail(){
+        return new HttpResult<>(false, "err");
     }
 
-    public static Result<String> fail(String err){
-        return new Result<>(false, err);
+    public static HttpResult<String> fail(String err){
+        return new HttpResult<>(false, err);
     }
 
 }

@@ -5,32 +5,109 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity"
+    android:padding="15dp"
+    tools:layout_height="640dp"
+    tools:layout_width="360dp"
+    tools:background="#D3D3D3">
 
-    <org.evilbinary.tv.widget.RoundedFrameLayout
-        android:id="@+id/view"
-        android:layout_width="270dp"
-        android:layout_height="406dp"
-        android:layout_margin="5dp"
-        android:focusable="true"
-        app:radius="4dp"
-        >
-        <ImageView
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:src="@mipmap/film_bg"
-            />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/border_down_shape"
-            android:gravity="center"
-            android:padding="15px"
-            android:text="我的电影"
-            android:textColor="@color/white"
-            android:textSize="24dp" />
-    </org.evilbinary.tv.widget.RoundedFrameLayout>
+            android:layout_height="wrap_content">
+
+            <org.evilbinary.tv.widget.RoundedFrameLayout
+                android:id="@+id/view_list"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="1:1.78"
+                android:focusable="true"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:radius="4dp"
+                >
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@mipmap/bg_list"
+                    />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/border_down_shape"
+                    android:gravity="center"
+                    android:padding="15dp"
+                    android:text="我的电影"
+                    android:textColor="@color/white"
+                    android:textSize="15dp" />
+            </org.evilbinary.tv.widget.RoundedFrameLayout>
+
+            <org.evilbinary.tv.widget.RoundedFrameLayout
+                android:id="@+id/view_add"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="15dp"
+                app:layout_constraintDimensionRatio="1:1.78"
+                android:focusable="true"
+                app:layout_constraintTop_toBottomOf="@+id/view_list"
+                app:layout_constraintRight_toRightOf="parent"
+                app:radius="4dp"
+                >
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/rect_add"
+                    android:src="@drawable/ic_add"
+                    android:padding="70dp"
+                    />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/border_down_shape"
+                    android:gravity="center"
+                    android:padding="15dp"
+                    android:text="新增"
+                    android:textColor="@color/white"
+                    android:textSize="15dp" />
+
+            </org.evilbinary.tv.widget.RoundedFrameLayout>
+
+            <org.evilbinary.tv.widget.RoundedFrameLayout
+                android:id="@+id/view_setting"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="1:1.78"
+                app:layout_constraintTop_toBottomOf="@+id/view_add"
+                android:layout_marginTop="15dp"
+                android:focusable="true"
+                app:radius="4dp"
+                >
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/rect_setting"
+                    />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/border_down_shape"
+                    android:gravity="center"
+                    android:padding="15dp"
+                    android:text="设置"
+                    android:textColor="@color/white"
+                    android:textSize="15dp" />
+
+            </org.evilbinary.tv.widget.RoundedFrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

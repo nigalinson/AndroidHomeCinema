@@ -1,7 +1,7 @@
 package com.sloth.cinema.controller;
 
 import com.sankuai.waimai.router.Router;
-import com.sloth.cinema.rest.Result;
+import com.sloth.cinema.rest.HttpResult;
 import com.sloth.ifilm.Film;
 import com.sloth.ifilm.FilmManager;
 import com.sloth.ifilm.FilmQueryParam;
@@ -41,62 +41,62 @@ public class FilmController {
         for(Film film: films){
             film.getLinks();
         }
-        return Result.ok(films).json();
+        return HttpResult.ok(films).json();
     }
 
     @PostMapping("/film/add")
     String addFilm(@RequestParam(value = "name",required = false) String name,
                    @RequestParam(value = "autoDownload", required = false) String autoDownload) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).addFilm(name, Boolean.parseBoolean(autoDownload));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @PutMapping("/film/crawler")
     String searchFilm(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).searchFilmResources(Long.parseLong(id));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @PutMapping("/film/crawlerAll")
     String searchAllFilm() {
         Router.getService(FilmManager.class, Strategy._DEFAULT).searchAllFilmResources();
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @DeleteMapping("/film/delete")
     String deleteFilm(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).removeFilm(Long.parseLong(id));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @PutMapping("/film/download")
     String downloadFilm(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).downloadFilm(Long.parseLong(id));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @PutMapping("/film/downloadLink")
     String downloadFilmByLink(@RequestParam("id") String id, @RequestParam("linkId") String linkId) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).downloadFilmByLink(Long.parseLong(id), Long.parseLong(linkId));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @DeleteMapping("/film/deleteCache")
     String deleteFilmCache(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).removeFilmCache(Long.parseLong(id));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @DeleteMapping("/film/disableLink")
     String disableLink(@RequestParam("id") String id) {
         Router.getService(FilmManager.class, Strategy._DEFAULT).disableLink(Long.parseLong(id));
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
     @PutMapping("/film/stopAll")
     String stopAll() {
         Router.getService(FilmManager.class, Strategy._DEFAULT).stopAll();
-        return Result.ok().json();
+        return HttpResult.ok().json();
     }
 
 }

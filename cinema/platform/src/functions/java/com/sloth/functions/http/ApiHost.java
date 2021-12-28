@@ -1,7 +1,5 @@
 package com.sloth.functions.http;
 
-import com.sloth.functions.http.AbsDefaultApiModule;
-
 /**
  * Author:    Carl
  * Version    V1.0

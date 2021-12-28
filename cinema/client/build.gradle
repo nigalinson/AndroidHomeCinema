@@ -53,11 +53,15 @@ dependencies {
     androidTestImplementation testDependencies.espresso
     androidTestImplementation testDependencies.mockitoCore
 
-    implementation supportDependencies.appCompat
-    implementation supportDependencies.constraintlayout
-
     api project(':platform')
     api project(':tv-widgets')
+    api project(':i-film')
+
+    implementation thirdDependencies.retrofit
+    implementation thirdDependencies.converterGson
+    implementation thirdDependencies.adapterRxjava2
+    implementation thirdDependencies.okhttp
+    implementation thirdDependencies.okhttplog
 
     annotationProcessor thirdDependencies.wmRouterAnno
 }
