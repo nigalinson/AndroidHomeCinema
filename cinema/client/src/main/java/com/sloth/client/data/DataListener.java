@@ -26,4 +26,6 @@ public interface DataListener extends RYBaseView {
 
     void loadMoreFilmListFailed(String message);
 
+    void toast(String message);
+
 }

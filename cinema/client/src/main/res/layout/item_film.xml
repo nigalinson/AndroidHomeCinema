@@ -5,8 +5,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="10dp"
     tools:layout_width="100dp"
-    tools:layout_height="177dp">
+    tools:layout_height="130dp">
 
     <ImageView
         android:id="@+id/cover"
@@ -17,17 +18,16 @@
         android:scaleType="centerCrop"
         tools:src="@mipmap/bg_down"/>
 
-<!--    <TextView-->
-<!--        android:id="@+id/name"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/cover"-->
-<!--        app:layout_constraintLeft_toLeftOf="parent"-->
-<!--        app:layout_constraintRight_toRightOf="parent"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        android:textColor="#666"-->
-<!--        android:textSize="15dp"-->
-<!--        tools:text="黑客帝国"-->
-<!--        />-->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:textColor="#ffffff"
+        android:gravity="center"
+        android:background="#88000000"
+        android:textSize="15dp"
+        tools:text="黑客帝国"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

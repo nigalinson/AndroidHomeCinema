@@ -3,6 +3,8 @@ package com.sloth.client.app;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.multidex.MultiDexApplication;
+
+import com.liulishuo.filedownloader.FileDownloader;
 import com.sankuai.waimai.router.Router;
 import com.sankuai.waimai.router.annotation.RouterProvider;
 import com.sankuai.waimai.router.annotation.RouterService;
@@ -48,6 +50,7 @@ public class App extends MultiDexApplication {
         LogUtils.init(Router.getService(Log.class, Configs.LOG_ENGINE));
 
         Thread.setDefaultUncaughtExceptionHandler(new CrashHandler());
+        FileDownloader.setup(this);
     }
 
     private void initRouter(Context context) {

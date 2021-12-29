@@ -76,6 +76,7 @@ public class UDPReceiver implements UDPReceiverCallback {
 
     public UDPReceiver(Looper looper) {
         receiverHaler = new ReceiverHandler(looper);
+        receiverHaler.setCallback(this);
     }
 
     public void receive(UDPReceiverCallback callback){

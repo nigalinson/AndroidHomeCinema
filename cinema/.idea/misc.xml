@@ -6,7 +6,9 @@
         <entry key="..\:/test/AndroidHomeCinema/cinema/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.38229166666666664" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/app/src/main/res/layout/activity_main.xml" value="0.36614583333333334" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/app/src/main/res/xml/network_security_config.xml" value="0.36614583333333334" />
+        <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/border_choosen.xml" value="0.38229166666666664" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/border_down_shape.xml" value="0.38229166666666664" />
+        <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/border_nothing.xml" value="0.38229166666666664" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/ic_add.xml" value="0.38229166666666664" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/rect_add.xml" value="0.38229166666666664" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/drawable/rect_setting.xml" value="0.2869791666666667" />
@@ -14,6 +16,7 @@
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/layout-land/activity_main.xml" value="0.25" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/layout/activity_list.xml" value="0.36614583333333334" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/layout/activity_main.xml" value="0.22" />
+        <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/layout/activity_player.xml" value="0.36614583333333334" />
         <entry key="..\:/test/AndroidHomeCinema/cinema/client/src/main/res/layout/item_film.xml" value="0.36614583333333334" />
         <entry key="..\:/test/pins-demo/pins-platform/app/src/main/res/layout/activity_main.xml" value="0.15462962962962962" />
       </map>

@@ -2,6 +2,7 @@ package com.sloth.client.adapter;
 
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import com.sloth.client.R;
 import com.sloth.functions.adapter.BaseViewHolder;
 import com.sloth.functions.image.RYImageLoader;
@@ -21,14 +22,17 @@ import com.sloth.ifilm.Film;
 public class FilmViewHolder extends BaseViewHolder<Film> {
 
     private ImageView cover;
+    private TextView title;
 
     public FilmViewHolder(View itemView) {
         super(itemView);
         cover = itemView.findViewById(R.id.cover);
+        title = itemView.findViewById(R.id.title);
     }
 
     @Override
     public void bindViewData(Film data) {
         RYImageLoader.with(cover.getContext()).load(data.getImg()).into(cover);
+        title.setText(data.getName());
     }
 }

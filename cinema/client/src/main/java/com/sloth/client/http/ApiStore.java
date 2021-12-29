@@ -1,5 +1,9 @@
 package com.sloth.client.http;
 
+import com.sloth.ifilm.Film;
+
+import java.util.List;
+
 import io.reactivex.Observable;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
@@ -21,13 +25,13 @@ import retrofit2.http.Query;
 public interface ApiStore {
 
     @GET("/film/list")
-    Observable<HttpResult<String>> queryFilmList(
+    Observable<HttpResult<List<Film>>> queryFilmList(
             @Query("pageIndex") String pageIndex,
             @Query("pageSize") String pageSize
     );
 
     @GET("/film/list")
-    Observable<HttpResult<String>> queryFilmList(
+    Observable<HttpResult<List<Film>>> queryFilmList(
             @Query("pageIndex") String pageIndex,
             @Query("pageSize") String pageSize,
             @Query("name") String name
